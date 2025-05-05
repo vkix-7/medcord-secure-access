@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { Hospital, Shield, Database, Lock } from "lucide-react";
+import { Hospital, Users, FileText, Activity, History, Shield, Database, Lock,} from "lucide-react";
 
 export default function Index() {
   return (
@@ -50,6 +50,107 @@ export default function Index() {
           </div>
         </section>
         
+         {/* Features Section */}
+      <section id="features" className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900">Why Choose MedCord?</h2>
+            <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
+              Our blockchain-based platform revolutionizes how medical records are stored, 
+              accessed, and shared.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="card transition-all duration-300 hover:shadow-md">
+              <div className="p-6">
+                <div className="h-12 w-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Lock className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Enhanced Security</h3>
+                <p className="text-gray-600">
+                  End-to-end encryption and blockchain verification ensure your medical 
+                  data remains secure and tamper-proof.
+                </p>
+              </div>
+            </div>
+            
+            {/* Feature 2 */}
+            <div className="card transition-all duration-300 hover:shadow-md">
+              <div className="p-6">
+                <div className="h-12 w-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Patient Control</h3>
+                <p className="text-gray-600">
+                  You decide who can access your medical records and for how long, with 
+                  granular permission settings.
+                </p>
+              </div>
+            </div>
+            
+            {/* Feature 3 */}
+            <div className="card transition-all duration-300 hover:shadow-md">
+              <div className="p-6">
+                <div className="h-12 w-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Database className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Decentralized Storage</h3>
+                <p className="text-gray-600">
+                  Your records are stored on IPFS, a distributed file system that eliminates 
+                  single points of failure.
+                </p>
+              </div>
+            </div>
+            
+            {/* Feature 4 */}
+            <div className="card transition-all duration-300 hover:shadow-md">
+              <div className="p-6">
+                <div className="h-12 w-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Comprehensive Records</h3>
+                <p className="text-gray-600">
+                  Store all medical data types including lab results, prescriptions, diagnoses, 
+                  imaging, and more.
+                </p>
+              </div>
+            </div>
+            
+            {/* Feature 5 */}
+            <div className="card transition-all duration-300 hover:shadow-md">
+              <div className="p-6">
+                <div className="h-12 w-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Activity className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Real-time Updates</h3>
+                <p className="text-gray-600">
+                  Receive instant notifications when records are added, accessed, or shared, 
+                  with full transparency.
+                </p>
+              </div>
+            </div>
+            
+            {/* Feature 6 */}
+            <div className="card transition-all duration-300 hover:shadow-md">
+              <div className="p-6">
+                <div className="h-12 w-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                  <History className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">Immutable Audit Trail</h3>
+                <p className="text-gray-600">
+                  Every access and change is permanently recorded on the blockchain, creating 
+                  a transparent history.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      
+      
         {/* Features Section */}
         <section className="py-16 md:py-24">
           <div className="container">
