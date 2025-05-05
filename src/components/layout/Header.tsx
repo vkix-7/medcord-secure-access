@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Hospital, User, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   userType?: "patient" | "provider" | null;
@@ -18,11 +19,16 @@ interface HeaderProps {
 }
 
 export default function Header({ userType, userName }: HeaderProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(!!userType);
+  const { user, profile, signOut } = useAuth();
+  const isLoggedIn = !!user;
   
   const getUserInitials = (name: string = "") => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
+  
+  // Use profile data if available, otherwise fall back to props
+  const displayName = profile?.full_name || userName || "";
+  const displayUserType = profile?.user_type || userType;
   
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -38,25 +44,25 @@ export default function Header({ userType, userName }: HeaderProps) {
           {isLoggedIn ? (
             <>
               <span className="text-sm text-muted-foreground hidden md:block">
-                {userType === "patient" ? "Patient Portal" : "Provider Portal"}
+                {displayUserType === "patient" ? "Patient Portal" : "Provider Portal"}
               </span>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="" alt={userName} />
+                      <AvatarImage src="" alt={displayName} />
                       <AvatarFallback className="bg-medblue-100 text-medblue-800">
-                        {getUserInitials(userName)}
+                        {getUserInitials(displayName)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex flex-col space-y-1 p-2">
-                    <p className="text-sm font-medium">{userName}</p>
+                    <p className="text-sm font-medium">{displayName}</p>
                     <p className="text-xs text-muted-foreground">
-                      {userType === "patient" ? "Patient" : "Healthcare Provider"}
+                      {displayUserType === "patient" ? "Patient" : "Healthcare Provider"}
                     </p>
                   </div>
                   <DropdownMenuSeparator />
@@ -68,7 +74,7 @@ export default function Header({ userType, userName }: HeaderProps) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
-                    onClick={() => setIsLoggedIn(false)}
+                    onClick={() => signOut()}
                     className="cursor-pointer"
                   >
                     Log out

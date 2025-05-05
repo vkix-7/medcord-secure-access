@@ -13,43 +13,72 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+
+const formSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+  userType: z.enum(["patient", "provider"]),
+  licenseNumber: z.string().optional(),
+})
+.refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+})
+.refine(
+  data => {
+    if (data.userType === "provider" && (!data.licenseNumber || data.licenseNumber.length < 3)) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "License number is required for providers",
+    path: ["licenseNumber"],
+  }
+);
 
 export default function RegisterForm() {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [userType, setUserType] = useState<"patient" | "provider">("patient");
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      userType: "patient",
+      licenseNumber: "",
+    },
   });
+  
+  const userType = form.watch("userType");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     
-    // Mock validation
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords don't match");
-      setIsLoading(false);
-      return;
-    }
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await signUp(values.email, values.password, {
+        full_name: values.name,
+        user_type: values.userType,
+      });
       
-      toast.success("Registration successful!");
       navigate("/login");
-    }, 1500);
+    } catch (error) {
+      console.error("Registration failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,103 +92,127 @@ export default function RegisterForm() {
           Enter your information to create your account
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="userType">I am registering as a:</Label>
-            <RadioGroup
-              id="userType"
-              value={userType}
-              onValueChange={(value) => setUserType(value as "patient" | "provider")}
-              className="flex gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="patient" id="patient" />
-                <Label htmlFor="patient">Patient</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="provider" id="provider" />
-                <Label htmlFor="provider">Healthcare Provider</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="userType"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>I am registering as a:</FormLabel>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="patient" id="patient" />
+                      <Label htmlFor="patient">Patient</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="provider" id="provider" />
+                      <Label htmlFor="provider">Healthcare Provider</Label>
+                    </div>
+                  </RadioGroup>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
               name="name"
-              placeholder="John Doe"
-              required
-              value={formData.name}
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
+            
+            <FormField
+              control={form.control}
               name="email"
-              placeholder="name@example.com"
-              required
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="name@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
+            
+            <FormField
+              control={form.control}
               name="password"
-              required
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
+            
+            <FormField
+              control={form.control}
               name="confirmPassword"
-              required
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          {userType === "provider" && (
-            <div className="space-y-2">
-              <Label htmlFor="licenseNumber">License Number</Label>
-              <Input
-                id="licenseNumber"
+            
+            {userType === "provider" && (
+              <FormField
+                control={form.control}
                 name="licenseNumber"
-                placeholder="Medical License Number"
-                required
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel>License Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Medical License Number" {...field} />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Your license will be verified before account activation
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Your license will be verified before account activation
-              </p>
+            )}
+          </CardContent>
+          
+          <CardFooter className="flex flex-col space-y-4">
+            <Button 
+              type="submit" 
+              className="w-full bg-medblue-600 hover:bg-medblue-700" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Creating account..." : "Create account"}
+            </Button>
+            <div className="text-center text-sm">
+              Already have an account?{" "}
+              <a href="/login" className="text-medblue-500 hover:text-medblue-600 font-medium">
+                Sign in
+              </a>
             </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button 
-            type="submit" 
-            className="w-full bg-medblue-600 hover:bg-medblue-700" 
-            disabled={isLoading}
-          >
-            {isLoading ? "Creating account..." : "Create account"}
-          </Button>
-          <div className="text-center text-sm">
-            Already have an account?{" "}
-            <a href="/login" className="text-medblue-500 hover:text-medblue-600 font-medium">
-              Sign in
-            </a>
-          </div>
-        </CardFooter>
-      </form>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }

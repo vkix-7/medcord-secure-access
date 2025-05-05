@@ -13,11 +13,12 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "sonner";
 import { Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginForm() {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<"patient" | "provider">("patient");
   const [formData, setFormData] = useState({
@@ -34,24 +35,15 @@ export default function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await signIn(formData.email, formData.password);
+      
+      // Navigation is handled in the AuthContext after successful login
+    } catch (error) {
+      console.error("Login failed:", error);
+    } finally {
       setIsLoading(false);
-
-      // Mock authentication logic
-      if (formData.email && formData.password) {
-        toast.success("Login successful!");
-        
-        // Redirect based on user type
-        if (userType === "patient") {
-          navigate("/patient-dashboard");
-        } else {
-          navigate("/provider-dashboard");
-        }
-      } else {
-        toast.error("Please fill in all fields");
-      }
-    }, 1000);
+    }
   };
 
   return (
