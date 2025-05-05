@@ -38,13 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
+        console.log("Auth state changed:", event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         if (event === "SIGNED_OUT") {
           setProfile(null);
-        } else if (currentSession?.user && event !== "TOKEN_REFRESHED") {
+        } else if (event === "SIGNED_IN" && currentSession?.user) {
           // Fetch user profile after small timeout to prevent deadlocks
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id);
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -82,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Error fetching user profile:", error);
         setProfile(null);
       } else {
+        console.log("Fetched profile:", data);
         setProfile(data as UserProfile);
       }
     } catch (error) {
@@ -94,23 +97,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
       
-      toast.success("Logged in successfully");
-      navigate(user?.user_metadata?.user_type === "provider" ? "/provider-dashboard" : "/patient-dashboard");
+      if (data.user) {
+        // Fetch the user profile immediately after login
+        await fetchUserProfile(data.user.id);
+        
+        // Get the user type from the profile and navigate accordingly
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("user_type")
+          .eq("id", data.user.id)
+          .single();
+          
+        const userType = profileData?.user_type;
+        const redirectPath = userType === "provider" ? "/provider-dashboard" : "/patient-dashboard";
+        
+        toast.success("Logged in successfully");
+        navigate(redirectPath);
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in");
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, userData: UserSignUpData) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -128,6 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       toast.error(error.message || "Failed to create account");
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

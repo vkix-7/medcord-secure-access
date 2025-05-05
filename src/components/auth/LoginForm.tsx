@@ -18,8 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginForm() {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, isLoading } = useAuth();
   const [userType, setUserType] = useState<"patient" | "provider">("patient");
   const [formData, setFormData] = useState({
     email: "",
@@ -33,16 +32,12 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
     try {
       await signIn(formData.email, formData.password);
-      
       // Navigation is handled in the AuthContext after successful login
     } catch (error) {
       console.error("Login failed:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 

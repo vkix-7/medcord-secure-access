@@ -26,7 +26,7 @@ export default function Header({ userType, userName }: HeaderProps) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
   
-  // Use profile data if available, otherwise fall back to props
+  // Use profile data from AuthContext if available, otherwise fall back to props
   const displayName = profile?.full_name || userName || "";
   const displayUserType = profile?.user_type || userType;
   

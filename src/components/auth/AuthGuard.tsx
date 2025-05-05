@@ -1,6 +1,6 @@
 
 import { ReactNode, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
@@ -11,6 +11,12 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children, userType }: AuthGuardProps) {
   const { user, profile, isLoading } = useAuth();
+  const location = useLocation();
+
+  // Debug information
+  useEffect(() => {
+    console.log("AuthGuard rendered:", { user, profile, isLoading, userType });
+  }, [user, profile, isLoading, userType]);
 
   if (isLoading) {
     return (
@@ -22,7 +28,8 @@ export default function AuthGuard({ children, userType }: AuthGuardProps) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Redirect to login but preserve the intended destination
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // If userType is specified, check if the user has the required type
