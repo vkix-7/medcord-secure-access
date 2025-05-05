@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
-  children: ReactNode;
+  children?: ReactNode; // Made optional with ?
   userType: "patient" | "provider";
   userName: string;
   activeTab?: string;

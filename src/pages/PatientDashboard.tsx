@@ -45,7 +45,7 @@ const sampleProviders = [
     id: "prov-001",
     name: "Dr. Sarah Johnson",
     type: "Primary Care Physician",
-    status: "active" as const,
+    status: "active" as const, // Using 'as const' to ensure proper typing
   },
   {
     id: "prov-002",
