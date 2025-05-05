@@ -55,7 +55,7 @@ export default function PermissionControl({
       // Update provider statuses based on permissions
       const updatedProviders = providers.map(provider => ({
         ...provider,
-        status: permissions[provider.id] ? "active" : "revoked"
+        status: permissions[provider.id] ? "active" as const : "revoked" as const
       }));
       
       if (onPermissionsUpdate) {
