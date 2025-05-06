@@ -144,7 +144,7 @@ export default function AddMedicalRecordForm({ onSuccess }: { onSuccess: () => v
           Add Medical Record
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Medical Record</DialogTitle>
           <DialogDescription>
@@ -152,7 +152,7 @@ export default function AddMedicalRecordForm({ onSuccess }: { onSuccess: () => v
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="title"
@@ -181,7 +181,7 @@ export default function AddMedicalRecordForm({ onSuccess }: { onSuccess: () => v
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="type"
@@ -234,6 +234,7 @@ export default function AddMedicalRecordForm({ onSuccess }: { onSuccess: () => v
                       placeholder="Brief summary of the medical record"
                       className="resize-none"
                       {...field} 
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -251,7 +252,8 @@ export default function AddMedicalRecordForm({ onSuccess }: { onSuccess: () => v
                     <Textarea 
                       placeholder="Detailed information about the medical record"
                       className="resize-none min-h-[100px]"
-                      {...field} 
+                      {...field}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -282,7 +284,7 @@ export default function AddMedicalRecordForm({ onSuccess }: { onSuccess: () => v
               )}
             />
             
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
