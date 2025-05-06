@@ -7,7 +7,7 @@ import BlockchainActivity from "@/components/dashboard/BlockchainActivity";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-// Types for data
+// Updated types for data
 interface BlockchainEvent {
   id: string;
   type: "access" | "update" | "create" | "permission" | "upload" | "delete" | "billing";
@@ -122,14 +122,16 @@ export default function PatientDashboard() {
           if (tx.transaction_type === 'permission') {
             target = `Added access for ${tx.metadata?.provider || 'provider'}`;
           } else if (tx.transaction_type === 'upload') {
-            target = tx.metadata?.file_name || 'Document';
+            target = tx.metadata && typeof tx.metadata === 'object' ? tx.metadata.file_name?.toString() || 'Document' : 'Document';
           } else if (tx.transaction_type === 'billing') {
-            target = `Bill for $${tx.metadata?.amount || '0'} from ${tx.metadata?.provider || 'provider'}`;
+            const amount = tx.metadata && typeof tx.metadata === 'object' ? tx.metadata.amount?.toString() || '0' : '0';
+            const provider = tx.metadata && typeof tx.metadata === 'object' ? tx.metadata.provider?.toString() || 'provider' : 'provider';
+            target = `Bill for $${amount} from ${provider}`;
           }
           
           return {
             id: tx.id,
-            type: tx.transaction_type as any,
+            type: tx.transaction_type as BlockchainEvent["type"],
             actor: actor,
             target: target,
             status: tx.status as "success" | "pending" | "rejected",
@@ -144,7 +146,7 @@ export default function PatientDashboard() {
     }
   };
 
-  const handleProviderUpdate = (updatedProviders: typeof providers) => {
+  const handleProviderUpdate = (updatedProviders: Provider[]) => {
     setProviders(updatedProviders);
   };
 

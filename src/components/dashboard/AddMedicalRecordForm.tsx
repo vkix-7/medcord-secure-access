@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusCircle, Loader2, Upload } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,6 +78,12 @@ export default function AddMedicalRecordForm({ onSuccess }: { onSuccess: () => v
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
+      // Get the current user's ID
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user?.id) {
+        throw new Error("User not authenticated");
+      }
+      
       const { error: recordError, data: recordData } = await supabase
         .from("medical_records")
         .insert({
@@ -88,6 +94,7 @@ export default function AddMedicalRecordForm({ onSuccess }: { onSuccess: () => v
           summary: data.summary || null,
           content: data.content || null,
           encrypted: data.encrypt,
+          patient_id: userData.user.id,
         })
         .select("id")
         .single();

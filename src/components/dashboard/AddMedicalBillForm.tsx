@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -94,6 +93,12 @@ export default function AddMedicalBillForm({ recordId, onSuccess }: AddMedicalBi
     setIsSubmitting(true);
     
     try {
+      // Get the current user's ID
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user?.id) {
+        throw new Error("User not authenticated");
+      }
+      
       // Insert medical bill record
       const { error: billError, data: billData } = await supabase
         .from("medical_bills")
@@ -105,6 +110,7 @@ export default function AddMedicalBillForm({ recordId, onSuccess }: AddMedicalBi
           due_date: data.dueDate ? new Date(data.dueDate).toISOString() : null,
           description: data.description || null,
           record_id: data.recordId || null,
+          patient_id: userData.user.id,
         })
         .select("id")
         .single();

@@ -20,7 +20,7 @@ import { format } from "date-fns";
 
 interface BlockchainEvent {
   id: string;
-  type: "access" | "update" | "create" | "permission";
+  type: "access" | "update" | "create" | "permission" | "upload" | "delete" | "billing";
   actor: string;
   target: string;
   status: "success" | "pending" | "rejected";
@@ -42,6 +42,12 @@ export default function BlockchainActivity({ events }: BlockchainActivityProps) 
         return "📄";
       case "permission":
         return "🔐";
+      case "upload":
+        return "📤";
+      case "delete":
+        return "🗑️";
+      case "billing":
+        return "💰";
       default:
         return "📝";
     }
@@ -57,6 +63,12 @@ export default function BlockchainActivity({ events }: BlockchainActivityProps) 
         return "Record Creation";
       case "permission":
         return "Permission Change";
+      case "upload":
+        return "File Upload";
+      case "delete":
+        return "Record Deletion";
+      case "billing":
+        return "Medical Bill";
       default:
         return "Activity";
     }
