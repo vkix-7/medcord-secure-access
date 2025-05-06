@@ -1,4 +1,3 @@
-
 import { 
   Table, 
   TableBody, 
@@ -88,50 +87,62 @@ export default function BlockchainActivity({ events }: BlockchainActivityProps) 
   };
   
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <Database className="h-5 w-5 text-medblue-600" />
-          <CardTitle>Blockchain Activity</CardTitle>
-        </div>
-        <CardDescription>
-          Recent activities recorded on the blockchain
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Details</TableHead>
-              <TableHead>When</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {events.map((event) => (
-              <TableRow key={event.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{getEventIcon(event.type)}</span>
-                    <span>{getEventLabel(event.type)}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <p className="font-medium text-sm">{event.actor}</p>
-                    <p className="text-xs text-muted-foreground">{event.target}</p>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {format(event.timestamp, "MMM d, yyyy h:mm a")}
-                </TableCell>
-                <TableCell>{getStatusBadge(event.status)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <div className="container mx-auto p-4">
+      <Card className="w-full">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-medblue-600" />
+            <CardTitle>Blockchain Activity</CardTitle>
+          </div>
+          <CardDescription>
+            Recent activities recorded on the blockchain
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[200px]">Type</TableHead>
+                  <TableHead>Details</TableHead>
+                  <TableHead className="w-[200px]">When</TableHead>
+                  <TableHead className="w-[100px]">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {events.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      No blockchain activities found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  events.map((event) => (
+                    <TableRow key={event.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{getEventIcon(event.type)}</span>
+                          <span className="font-medium">{getEventLabel(event.type)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm">{event.actor}</p>
+                          <p className="text-xs text-muted-foreground">{event.target}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                        {format(event.timestamp, "MMM d, yyyy h:mm a")}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(event.status)}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

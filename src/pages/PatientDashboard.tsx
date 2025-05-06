@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { usePatientData } from "@/hooks/usePatientData";
 import AdminDashboardLayout from "@/components/layout/AdminDashboardLayout";
@@ -8,7 +7,10 @@ import AccessControlTab from "@/components/dashboard/AccessControlTab";
 import SharePermissionsTab from "@/components/dashboard/SharePermissionsTab";
 import AskAIAssistantTab from "@/components/dashboard/AskAIAssistantTab";
 import AppointmentsTab from "@/components/dashboard/AppointmentsTab";
+import ShopTab from "@/components/dashboard/ShopTab";
+import ProfileTab from "@/components/dashboard/ProfileTab";
 import DashboardStats from "@/components/dashboard/DashboardStats";
+import SettingsTab from "@/components/dashboard/SettingsTab";
 
 export default function PatientDashboard() {
   const { 
@@ -22,7 +24,7 @@ export default function PatientDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
 
   const renderTabContent = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case "overview":
         return (
           <PatientOverviewTab 
@@ -47,6 +49,12 @@ export default function PatientDashboard() {
         return <AskAIAssistantTab />;
       case "appointments":
         return <AppointmentsTab />;
+      case "shop":
+        return <ShopTab />;
+      case "profile":
+        return <ProfileTab />;
+      case "settings":
+        return <SettingsTab />;
       default:
         return <DashboardStats />;
     }

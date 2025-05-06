@@ -68,44 +68,7 @@ export default function DashboardStats() {
         </Card>
       </div>
 
-      {/* Balance Section and Statistics Switcher */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Patient Statistics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
-              <Button variant="outline" size="sm">Monthly</Button>
-              <Button variant="outline" size="sm">Weekly</Button>
-              <Button variant="outline" size="sm">Today</Button>
-            </div>
-            <div className="h-[200px] flex items-center justify-center bg-muted/20 rounded-md">
-              <ChartBar className="h-8 w-8 text-muted" />
-              <span className="ml-2 text-muted">Patient visit statistics chart</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="text-2xl font-bold">$12,580.00</div>
-              <p className="text-xs text-muted-foreground">Your current balance</p>
-              <div className="flex space-x-2">
-                <div className="grid flex-1 gap-2">
-                  <Label htmlFor="amount">Amount</Label>
-                  <Input id="amount" placeholder="Enter amount" />
-                </div>
-                <Button className="self-end">GO</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+   
 
       {/* Top Rated Doctors */}
       <Card>

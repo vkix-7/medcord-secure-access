@@ -1,4 +1,3 @@
-
 import { Bell, Gift, Moon, Sun } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar"; // only if SidebarTrigger is actually exported
 
@@ -11,14 +10,32 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface DashboardHeaderProps {
   userName?: string;
+  setActiveTab?: (tab: string) => void;
 }
 
-export default function DashboardHeader({ userName = "User" }: DashboardHeaderProps) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+export default function DashboardHeader({ userName = "User", setActiveTab }: DashboardHeaderProps) {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    // Check if theme is stored in localStorage
+    const savedTheme = localStorage.getItem('theme');
+    // Check if user prefers dark mode
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return (savedTheme as 'light' | 'dark') || (prefersDark ? 'dark' : 'light');
+  });
+
+  useEffect(() => {
+    // Update the theme in localStorage and document
+    localStorage.setItem('theme', theme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
 
   const getUserInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -49,9 +66,9 @@ export default function DashboardHeader({ userName = "User" }: DashboardHeaderPr
             variant="ghost" 
             size="icon" 
             className="rounded-full"
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={toggleTheme}
           >
-            {isDarkMode ? (
+            {theme === 'dark' ? (
               <Sun className="h-[1.2rem] w-[1.2rem]" />
             ) : (
               <Moon className="h-[1.2rem] w-[1.2rem]" />
@@ -78,8 +95,8 @@ export default function DashboardHeader({ userName = "User" }: DashboardHeaderPr
                 </p>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveTab?.("profile")}>Profile</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveTab?.("settings")}>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Log out</DropdownMenuItem>
             </DropdownMenuContent>

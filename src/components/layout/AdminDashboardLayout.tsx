@@ -1,4 +1,3 @@
-
 import { ReactNode } from "react";
 import { 
   SidebarProvider, 
@@ -17,13 +16,13 @@ import {
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import { 
   LayoutDashboard, 
-  User, 
+  
   Users, 
   Calendar, 
   PlusCircle,
-  Bell,
+  
   Settings,
-  UserCircle,
+ 
   ShoppingCart,
   MessageSquare,
   HelpCircle,
@@ -41,16 +40,15 @@ interface AdminDashboardLayoutProps {
 
 const menuItems = [
   { id: "overview", title: "Dashboard", icon: LayoutDashboard },
-  { id: "patients", title: "Patient", icon: Users },
-  { id: "doctors", title: "Doctor", icon: User },
-  { id: "medicine", title: "Add Medicine", icon: PlusCircle },
+ 
+  
   { id: "appointments", title: "All Appointments", icon: Calendar },
-  { id: "users", title: "User", icon: UserCircle },
   { id: "records", title: "Medical Records", icon: ClipboardList },
   { id: "permissions", title: "Access Control", icon: Settings },
   { id: "share", title: "Share Data", icon: Users },
-  { id: "profile", title: "Profile", icon: UserCircle },
+  
   { id: "shop", title: "Shop", icon: ShoppingCart },
+  { id: "medicine", title: "Add Medicine", icon: PlusCircle },
   { id: "chat", title: "Chat", icon: MessageSquare },
   { id: "ai-assistant", title: "Ask AI", icon: HelpCircle }
 ];
@@ -104,7 +102,7 @@ export default function AdminDashboardLayout({
                   <p className="text-xs text-muted-foreground mb-3">
                     View your upcoming appointments and tasks
                   </p>
-                  <Button size="sm" className="w-full">View Schedule</Button>
+                  <Button size="sm" className="w-full" onClick={() => setActiveTab("appointments")}>View Schedule</Button>
                 </CardContent>
               </Card>
             </SidebarGroup>
@@ -113,7 +111,7 @@ export default function AdminDashboardLayout({
         
         <SidebarInset>
           <div className="flex flex-col h-full">
-            <DashboardHeader userName={userName} />
+            <DashboardHeader userName={userName} setActiveTab={setActiveTab} />
             <main className="flex-1 p-6">
               {children}
             </main>
