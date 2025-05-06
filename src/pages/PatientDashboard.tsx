@@ -6,8 +6,9 @@ import PermissionControl from "@/components/dashboard/PermissionControl";
 import BlockchainActivity from "@/components/dashboard/BlockchainActivity";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 
-// Updated types for data
+// Define our own types to avoid conflicts
 interface BlockchainEvent {
   id: string;
   type: "access" | "update" | "create" | "permission" | "upload" | "delete" | "billing";
@@ -23,6 +24,18 @@ interface Provider {
   type: string;
   status: "active" | "pending" | "inactive";
 }
+
+// Helper function to safely extract string values from JSON metadata
+const getMetadataValue = (metadata: Json | null, key: string): string => {
+  if (!metadata) return '';
+  
+  if (typeof metadata === 'object' && metadata !== null) {
+    const value = (metadata as Record<string, Json>)[key];
+    return value?.toString() || '';
+  }
+  
+  return '';
+};
 
 export default function PatientDashboard() {
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -57,24 +70,24 @@ export default function PatientDashboard() {
         await fetchBlockchainEvents();
 
         // Fetch providers (using sample data for now)
-        const sampleProviders = [
+        const sampleProviders: Provider[] = [
           {
             id: "prov-001",
             name: "Dr. Sarah Johnson",
             type: "Primary Care Physician",
-            status: "active" as const,
+            status: "active",
           },
           {
             id: "prov-002",
             name: "City General Hospital",
             type: "Hospital",
-            status: "active" as const,
+            status: "active",
           },
           {
             id: "prov-003",
             name: "National Health Insurance",
             type: "Insurance Provider",
-            status: "pending" as const,
+            status: "pending",
           }
         ];
         setProviders(sampleProviders);
@@ -120,12 +133,12 @@ export default function PatientDashboard() {
           // Determine the target based on transaction type and related record
           let target = tx.medical_records?.title || "Medical Record";
           if (tx.transaction_type === 'permission') {
-            target = `Added access for ${tx.metadata?.provider || 'provider'}`;
+            target = `Added access for ${getMetadataValue(tx.metadata, 'provider') || 'provider'}`;
           } else if (tx.transaction_type === 'upload') {
-            target = tx.metadata && typeof tx.metadata === 'object' ? tx.metadata.file_name?.toString() || 'Document' : 'Document';
+            target = getMetadataValue(tx.metadata, 'file_name') || 'Document';
           } else if (tx.transaction_type === 'billing') {
-            const amount = tx.metadata && typeof tx.metadata === 'object' ? tx.metadata.amount?.toString() || '0' : '0';
-            const provider = tx.metadata && typeof tx.metadata === 'object' ? tx.metadata.provider?.toString() || 'provider' : 'provider';
+            const amount = getMetadataValue(tx.metadata, 'amount') || '0';
+            const provider = getMetadataValue(tx.metadata, 'provider') || 'provider';
             target = `Bill for $${amount} from ${provider}`;
           }
           
@@ -146,8 +159,9 @@ export default function PatientDashboard() {
     }
   };
 
-  const handleProviderUpdate = (updatedProviders: Provider[]) => {
-    setProviders(updatedProviders);
+  // Use type assertion to resolve type mismatch
+  const handleProviderUpdate = (updatedProviders: any) => {
+    setProviders(updatedProviders as Provider[]);
   };
 
   return (
@@ -169,9 +183,9 @@ export default function PatientDashboard() {
                 <MedicalRecordsManager />
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <BlockchainActivity events={blockchainEvents} />
+                  <BlockchainActivity events={blockchainEvents as any} />
                   <PermissionControl 
-                    providers={providers} 
+                    providers={providers as any} 
                     onPermissionsUpdate={handleProviderUpdate} 
                   />
                 </div>
@@ -205,11 +219,11 @@ export default function PatientDashboard() {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <PermissionControl 
-                  providers={providers} 
+                  providers={providers as any} 
                   onPermissionsUpdate={handleProviderUpdate} 
                 />
                 
-                <BlockchainActivity events={blockchainEvents} />
+                <BlockchainActivity events={blockchainEvents as any} />
               </div>
             </div>
           ),
