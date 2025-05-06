@@ -1,5 +1,7 @@
 
-import { Bell, Gift, Moon, Sun, SidebarTrigger } from "@/components/ui/sidebar";
+import { Bell, Gift, Moon, Sun } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar"; // only if SidebarTrigger is actually exported
+
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
