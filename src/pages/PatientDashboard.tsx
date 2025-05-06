@@ -3,6 +3,9 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import PatientOverviewTab from "@/components/dashboard/PatientOverviewTab";
 import MedicalRecordsTab from "@/components/dashboard/MedicalRecordsTab";
 import AccessControlTab from "@/components/dashboard/AccessControlTab";
+import SharePermissionsTab from "@/components/dashboard/SharePermissionsTab";
+import AskAIAssistantTab from "@/components/dashboard/AskAIAssistantTab";
+import AppointmentsTab from "@/components/dashboard/AppointmentsTab";
 import { usePatientData } from "@/hooks/usePatientData";
 
 export default function PatientDashboard() {
@@ -46,6 +49,27 @@ export default function PatientDashboard() {
               providers={providers}
               onProviderUpdate={handleProviderUpdate}
             />
+          ),
+        },
+        {
+          id: "share",
+          label: "Share Data",
+          content: (
+            <SharePermissionsTab />
+          ),
+        },
+        {
+          id: "ai-assistant",
+          label: "Ask AI Assistant",
+          content: (
+            <AskAIAssistantTab />
+          ),
+        },
+        {
+          id: "appointments",
+          label: "Appointments",
+          content: (
+            <AppointmentsTab />
           ),
         },
       ]}
