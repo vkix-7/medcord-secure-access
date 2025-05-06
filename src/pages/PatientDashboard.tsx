@@ -1,12 +1,14 @@
 
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import { useState } from "react";
+import { usePatientData } from "@/hooks/usePatientData";
+import AdminDashboardLayout from "@/components/layout/AdminDashboardLayout";
 import PatientOverviewTab from "@/components/dashboard/PatientOverviewTab";
 import MedicalRecordsTab from "@/components/dashboard/MedicalRecordsTab";
 import AccessControlTab from "@/components/dashboard/AccessControlTab";
 import SharePermissionsTab from "@/components/dashboard/SharePermissionsTab";
 import AskAIAssistantTab from "@/components/dashboard/AskAIAssistantTab";
 import AppointmentsTab from "@/components/dashboard/AppointmentsTab";
-import { usePatientData } from "@/hooks/usePatientData";
+import DashboardStats from "@/components/dashboard/DashboardStats";
 
 export default function PatientDashboard() {
   const { 
@@ -16,63 +18,47 @@ export default function PatientDashboard() {
     userName, 
     handleProviderUpdate 
   } = usePatientData();
+  
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const renderTabContent = () => {
+    switch(activeTab) {
+      case "overview":
+        return (
+          <PatientOverviewTab 
+            blockchainEvents={blockchainEvents} 
+            providers={providers}
+            onProviderUpdate={handleProviderUpdate}
+          />
+        );
+      case "records":
+        return <MedicalRecordsTab />;
+      case "permissions":
+        return (
+          <AccessControlTab 
+            blockchainEvents={blockchainEvents} 
+            providers={providers}
+            onProviderUpdate={handleProviderUpdate}
+          />
+        );
+      case "share":
+        return <SharePermissionsTab />;
+      case "ai-assistant":
+        return <AskAIAssistantTab />;
+      case "appointments":
+        return <AppointmentsTab />;
+      default:
+        return <DashboardStats />;
+    }
+  };
 
   return (
-    <DashboardLayout
-      userType="patient"
+    <AdminDashboardLayout 
       userName={userName}
-      tabs={[
-        {
-          id: "overview",
-          label: "Overview",
-          content: (
-            <PatientOverviewTab 
-              blockchainEvents={blockchainEvents} 
-              providers={providers}
-              onProviderUpdate={handleProviderUpdate}
-            />
-          ),
-        },
-        {
-          id: "records",
-          label: "Medical Records",
-          content: (
-            <MedicalRecordsTab />
-          ),
-        },
-        {
-          id: "permissions",
-          label: "Access Control",
-          content: (
-            <AccessControlTab 
-              blockchainEvents={blockchainEvents} 
-              providers={providers}
-              onProviderUpdate={handleProviderUpdate}
-            />
-          ),
-        },
-        {
-          id: "share",
-          label: "Share Data",
-          content: (
-            <SharePermissionsTab />
-          ),
-        },
-        {
-          id: "ai-assistant",
-          label: "Ask AI Assistant",
-          content: (
-            <AskAIAssistantTab />
-          ),
-        },
-        {
-          id: "appointments",
-          label: "Appointments",
-          content: (
-            <AppointmentsTab />
-          ),
-        },
-      ]}
-    />
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+    >
+      {renderTabContent()}
+    </AdminDashboardLayout>
   );
 }
