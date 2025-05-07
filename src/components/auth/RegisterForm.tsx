@@ -25,8 +25,9 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string(),
-  userType: z.enum(["patient", "provider"]),
+  userType: z.enum(["patient", "provider", "admin"]),
   licenseNumber: z.string().optional(),
+  adminCode: z.string().optional(),
 })
 .refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -42,6 +43,18 @@ const formSchema = z.object({
   {
     message: "License number is required for providers",
     path: ["licenseNumber"],
+  }
+)
+.refine(
+  data => {
+    if (data.userType === "admin" && (!data.adminCode || data.adminCode !== "MEDCORD2025")) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Valid admin code is required for admin registration",
+    path: ["adminCode"],
   }
 );
 
@@ -59,6 +72,7 @@ export default function RegisterForm() {
       confirmPassword: "",
       userType: "patient",
       licenseNumber: "",
+      adminCode: "",
     },
   });
   
@@ -105,7 +119,7 @@ export default function RegisterForm() {
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="flex gap-4"
+                    className="flex flex-wrap gap-4"
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="patient" id="patient" />
@@ -114,6 +128,10 @@ export default function RegisterForm() {
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="provider" id="provider" />
                       <Label htmlFor="provider">Healthcare Provider</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="admin" id="admin" />
+                      <Label htmlFor="admin">Administrator</Label>
                     </div>
                   </RadioGroup>
                 </FormItem>
@@ -188,6 +206,25 @@ export default function RegisterForm() {
                     </FormControl>
                     <p className="text-xs text-muted-foreground">
                       Your license will be verified before account activation
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {userType === "admin" && (
+              <FormField
+                control={form.control}
+                name="adminCode"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel>Admin Registration Code</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Enter admin code" {...field} />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      This code is required for administrator registration
                     </p>
                     <FormMessage />
                   </FormItem>

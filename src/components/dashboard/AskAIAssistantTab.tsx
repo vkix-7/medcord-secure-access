@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
-import { Send, User, MessageSquare } from "lucide-react";
+import { Send, User, MessageSquare, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface Message {
   id: number;
@@ -22,35 +25,12 @@ const initialMessages: Message[] = [
   },
 ];
 
-// Sample responses based on keywords
-const getAIResponse = (userMessage: string): string => {
-  const lowerCaseMessage = userMessage.toLowerCase();
-  
-  if (lowerCaseMessage.includes("appointment") || lowerCaseMessage.includes("schedule")) {
-    return "Your next appointment is scheduled with Dr. Johnson on May 15th at 10:00 AM. Would you like me to help you reschedule or make a new appointment?";
-  } 
-  else if (lowerCaseMessage.includes("medication") || lowerCaseMessage.includes("medicine")) {
-    return "I can see you currently have prescriptions for: Lisinopril (10mg, daily) and Metformin (500mg, twice daily). Your Lisinopril prescription needs renewal in 2 weeks. Would you like more information about either of these medications?";
-  }
-  else if (lowerCaseMessage.includes("blood pressure") || lowerCaseMessage.includes("bp")) {
-    return "Your last recorded blood pressure reading was 122/78 mmHg on April 28th, 2025. This is within the normal range. Your doctor recommends continuing your current medication and lifestyle changes.";
-  }
-  else if (lowerCaseMessage.includes("test") || lowerCaseMessage.includes("lab") || lowerCaseMessage.includes("result")) {
-    return "Your recent lab work from May 1st, 2025 shows normal cholesterol levels and blood sugar within target range. Your doctor noted this is an improvement from your previous results and recommends maintaining your current treatment plan.";
-  }
-  else if (lowerCaseMessage.includes("thanks") || lowerCaseMessage.includes("thank you")) {
-    return "You're welcome! Is there anything else I can help you with today?";
-  }
-  else {
-    return "I understand you're asking about your health information. To better assist you, could you provide more specific details about what you'd like to know? I can help with your appointments, medications, recent test results, or general health questions.";
-  }
-};
-
 export default function AskAIAssistantTab() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { profile } = useAuth();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,9 +40,10 @@ export default function AskAIAssistantTab() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!input.trim()) return;
 
+    // Add user message to chat
     const userMessage: Message = {
       id: messages.length + 1,
       text: input,
@@ -74,17 +55,53 @@ export default function AskAIAssistantTab() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI thinking and typing
-    setTimeout(() => {
+    try {
+      // Prepare user context from profile data if available
+      const userContext = profile ? {
+        name: profile.full_name,
+        age: profile.age || null,
+        conditions: profile.conditions || [],
+        medications: profile.medications || [],
+        allergies: profile.allergies || [],
+      } : null;
+
+      // Call our Edge Function with the user's message and context
+      const { data, error } = await supabase.functions.invoke('gemini-health-assistant', {
+        body: { 
+          message: input,
+          userContext
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to get response from AI assistant");
+      }
+
+      // Add AI response to chat
       const aiResponse: Message = {
         id: messages.length + 2,
-        text: getAIResponse(input),
+        text: data?.response || "I'm sorry, I couldn't process your request at this time.",
         sender: "ai",
         timestamp: new Date(),
       };
+
       setMessages((prev) => [...prev, aiResponse]);
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      
+      // Add fallback message on error
+      const errorMessage: Message = {
+        id: messages.length + 2,
+        text: "I'm sorry, I'm having trouble responding right now. Please try again later or contact support if the issue persists.",
+        sender: "ai",
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, errorMessage]);
+      toast.error("Failed to get AI response");
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -136,7 +153,7 @@ export default function AskAIAssistantTab() {
                             })}
                           </span>
                         </div>
-                        <p>{message.text}</p>
+                        <p className="whitespace-pre-line">{message.text}</p>
                       </div>
                     </div>
                   ))}
@@ -145,7 +162,7 @@ export default function AskAIAssistantTab() {
                       <div className="max-w-[80%] px-4 py-2 rounded-lg bg-muted">
                         <div className="flex items-center gap-2">
                           <MessageSquare className="h-4 w-4" />
-                          <span className="text-sm">Health Assistant is typing...</span>
+                          <span className="text-sm">Health Assistant is thinking...</span>
                         </div>
                       </div>
                     </div>
