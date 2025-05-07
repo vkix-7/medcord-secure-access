@@ -44,6 +44,8 @@ export default function AuthGuard({ children, userType }: AuthGuardProps) {
       return <Navigate to="/patient-dashboard" replace />;
     } else if (profile?.user_type === "provider") {
       return <Navigate to="/provider-dashboard" replace />;
+    } else if (profile?.user_type === "admin") {
+      return <Navigate to="/admin-dashboard" replace />;
     } else {
       return <Navigate to="/login" replace />;
     }

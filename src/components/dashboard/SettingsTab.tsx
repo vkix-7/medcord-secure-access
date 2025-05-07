@@ -61,6 +61,9 @@ interface SettingsData {
   // Security Settings
   twoFactorEnabled: boolean;
   passwordLastChanged: string;
+  
+  // Theme
+  theme: "light" | "dark" | "system";
 }
 
 export default function SettingsTab() {
@@ -77,7 +80,8 @@ export default function SettingsTab() {
     medicationReminders: true,
     labResults: true,
     twoFactorEnabled: false,
-    passwordLastChanged: new Date().toISOString()
+    passwordLastChanged: new Date().toISOString(),
+    theme: "system"
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -397,4 +401,4 @@ export default function SettingsTab() {
       </Tabs>
     </div>
   );
-} 
+}

@@ -21,6 +21,16 @@ interface UserProfile {
   id: string;
   user_type: "patient" | "provider" | "admin";
   full_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  age?: number;
+  gender?: string;
+  medical_history?: string;
+  allergies?: string[];
+  medications?: string[];
+  conditions?: string[];
+  avatar_url?: string;
 }
 
 export interface UserSignUpData {
