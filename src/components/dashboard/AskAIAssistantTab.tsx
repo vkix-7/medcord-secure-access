@@ -191,4 +191,5 @@ export default function AskAIAssistantTab() {
         </Card>
       </div>
     </div>
-  
+  );
+}

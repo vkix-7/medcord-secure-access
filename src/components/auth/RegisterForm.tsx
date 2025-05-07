@@ -251,4 +251,5 @@ export default function RegisterForm() {
         </form>
       </Form>
     </Card>
-  
+  );
+}
