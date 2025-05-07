@@ -13,17 +13,20 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Lock } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import OTPVerificationForm from "./OTPVerificationForm";
+import { toast } from "sonner";
 
 export default function LoginForm() {
   const navigate = useNavigate();
   const { signIn, isLoading } = useAuth();
-  const [userType, setUserType] = useState<"patient" | "provider">("patient");
+  const [userType, setUserType] = useState<"patient" | "provider" | "admin">("patient");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [otpSent, setOtpSent] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -33,13 +36,32 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.email || !formData.password) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+    
     try {
-      await signIn(formData.email, formData.password);
-      // Navigation is handled in the AuthContext after successful login
-    } catch (error) {
+      // Request OTP to be sent to the user's email
+      await signIn(formData.email, formData.password, userType, true);
+      setOtpSent(true);
+      toast.success("OTP sent to your email");
+    } catch (error: any) {
       console.error("Login failed:", error);
+      toast.error(error.message || "Login failed. Please check your credentials.");
     }
   };
+
+  if (otpSent) {
+    return (
+      <OTPVerificationForm 
+        email={formData.email} 
+        password={formData.password}
+        userType={userType} 
+        onBack={() => setOtpSent(false)}
+      />
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -59,8 +81,8 @@ export default function LoginForm() {
             <RadioGroup
               id="userType"
               value={userType}
-              onValueChange={(value) => setUserType(value as "patient" | "provider")}
-              className="flex gap-4"
+              onValueChange={(value) => setUserType(value as "patient" | "provider" | "admin")}
+              className="flex flex-wrap gap-4"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="patient" id="patient" />
@@ -69,6 +91,10 @@ export default function LoginForm() {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="provider" id="provider" />
                 <Label htmlFor="provider">Healthcare Provider</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="admin" id="admin" />
+                <Label htmlFor="admin">Admin</Label>
               </div>
             </RadioGroup>
           </div>
@@ -107,7 +133,14 @@ export default function LoginForm() {
             className="w-full bg-medblue-600 hover:bg-medblue-700" 
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending OTP...
+              </>
+            ) : (
+              "Get OTP"
+            )}
           </Button>
           <div className="text-center text-sm">
             Don't have an account?{" "}
