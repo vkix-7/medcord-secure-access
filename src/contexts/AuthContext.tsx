@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,11 +115,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq("id", data.user.id)
           .single();
           
-        const userType = profileData?.user_type;
-        const redirectPath = userType === "provider" ? "/provider-dashboard" : "/patient-dashboard";
-        
         toast.success("Logged in successfully");
-        navigate(redirectPath);
+        
+        // Redirect to admin dashboard instead of user-type specific dashboard
+        navigate("/admin-dashboard");
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in");

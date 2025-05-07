@@ -189,6 +189,42 @@ export type Database = {
         }
         Relationships: []
       }
+      medicine_orders: {
+        Row: {
+          created_at: string
+          delivery_address: string
+          doctor_name: string
+          id: string
+          patient_details: string
+          patient_id: string
+          prescription_file: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_address: string
+          doctor_name: string
+          id?: string
+          patient_details: string
+          patient_id: string
+          prescription_file: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_address?: string
+          doctor_name?: string
+          id?: string
+          patient_details?: string
+          patient_id?: string
+          prescription_file?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       otp_attempts: {
         Row: {
           code: string

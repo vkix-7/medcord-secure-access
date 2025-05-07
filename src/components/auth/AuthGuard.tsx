@@ -1,12 +1,11 @@
-
 import { ReactNode, useEffect } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
   children: ReactNode;
-  userType?: "patient" | "provider";
+  userType: "patient" | "provider" | "any";
 }
 
 export default function AuthGuard({ children, userType }: AuthGuardProps) {
@@ -32,13 +31,21 @@ export default function AuthGuard({ children, userType }: AuthGuardProps) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If userType is specified, check if the user has the required type
-  if (userType && profile && profile.user_type !== userType) {
-    const redirectPath = profile.user_type === "patient" 
-      ? "/patient-dashboard" 
-      : "/provider-dashboard";
-    
-    return <Navigate to={redirectPath} replace />;
+  // If userType is "any", allow access regardless of profile type
+  if (userType === "any") {
+    return <>{children}</>;
+  }
+
+  // Otherwise check if the user has the correct type
+  if (profile?.user_type !== userType) {
+    // Redirect to the appropriate dashboard based on user type
+    if (profile?.user_type === "patient") {
+      return <Navigate to="/patient-dashboard" replace />;
+    } else if (profile?.user_type === "provider") {
+      return <Navigate to="/provider-dashboard" replace />;
+    } else {
+      return <Navigate to="/login" replace />;
+    }
   }
 
   return <>{children}</>;
