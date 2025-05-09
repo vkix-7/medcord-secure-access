@@ -4,59 +4,10 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-interface AuthContextProps {
-  session: Session | null;
-  user: User | null;
-  profile: UserProfile | null;
-  isLoading: boolean;
-  signIn: (email: string, password: string, userType?: "patient" | "provider" | "admin", sendOTP?: boolean) => Promise<void>;
-  signUp: (email: string, password: string, userData: UserSignUpData) => Promise<void>;
-  signOut: () => Promise<void>;
-  verifyOTP: (email: string, otp: string) => Promise<boolean>;
-  resendOTP: (email: string, password: string) => Promise<void>;
-}
-
-interface UserProfile {
-  id: string;
-  user_type: "patient" | "provider" | "admin";
-  full_name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  age?: number;
-  gender?: string;
-  medical_history?: string;
-  allergies?: string[];
-  medications?: string[];
-  conditions?: string[];
-  avatar_url?: string;
-}
-
-export interface UserSignUpData {
-  full_name: string;
-  user_type: "patient" | "provider" | "admin";
-}
+import { cleanupAuthState, generateAndSendOTP, fetchUserProfile } from "@/utils/authUtils";
+import { AuthContextProps, UserProfile, UserSignUpData } from "@/hooks/useAuthTypes";
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
-
-// Helper function to clean up auth state to prevent authentication limbo
-const cleanupAuthState = () => {
-  // Remove standard auth tokens
-  localStorage.removeItem('supabase.auth.token');
-  // Remove all Supabase auth keys from localStorage
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      localStorage.removeItem(key);
-    }
-  });
-  // Remove from sessionStorage if in use
-  Object.keys(sessionStorage || {}).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      sessionStorage.removeItem(key);
-    }
-  });
-};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -78,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (event === "SIGNED_IN" && currentSession?.user) {
           // Fetch user profile after small timeout to prevent deadlocks
           setTimeout(() => {
-            fetchUserProfile(currentSession.user.id);
+            loadUserProfile(currentSession.user.id);
           }, 0);
         }
       }
@@ -90,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        fetchUserProfile(currentSession.user.id);
+        loadUserProfile(currentSession.user.id);
       } else {
         setIsLoading(false);
       }
@@ -101,25 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const fetchUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string) => {
     try {
-      console.log("Fetching profile for user:", userId);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching user profile:", error);
-        setProfile(null);
-      } else {
-        console.log("Fetched profile:", data);
-        setProfile(data as UserProfile);
-      }
-    } catch (error) {
-      console.error("Error fetching user profile:", error);
-      setProfile(null);
+      const profileData = await fetchUserProfile(userId);
+      setProfile(profileData as UserProfile);
     } finally {
       setIsLoading(false);
     }
@@ -141,43 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       if (sendOTP) {
-        // Request OTP to be sent
-        const { data: otpData, error: otpError } = await supabase.rpc('create_otp', {
-          p_email: email,
-          p_phone_number: null,
-          p_user_id: null,
-          p_expires_in: '00:10:00'  // 10 minutes expiry
-        });
-        
-        if (otpError) throw otpError;
-        console.log("OTP requested successfully, code:", otpData);
-        
-        // Now call our edge function to send the OTP email
-        try {
-          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-otp-email', {
-            body: {
-              email,
-              otpCode: otpData  // The create_otp function returns the generated code
-            }
-          });
-
-          if (emailError) {
-            console.error("Failed to send OTP email:", emailError);
-            toast.error("Failed to send OTP email. Please try again.");
-            throw new Error(emailError.message || "Failed to send OTP email");
-          }
-
-          console.log("OTP email sent successfully:", emailData);
-          toast.success("OTP sent to your email");
-        } catch (emailSendError) {
-          console.error("Error sending OTP email:", emailSendError);
-          toast.error("Failed to send OTP email. Please try again.");
-          throw emailSendError;
-        }
+        // Generate and send OTP
+        await generateAndSendOTP(email);
         
         // Store user type temporarily in local storage
         localStorage.setItem('medcord_temp_user_type', userType);
         
+        toast.success("OTP sent to your email");
         return;
       } else {
         // Standard sign in
@@ -190,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (data.user) {
           // Fetch the user profile
-          await fetchUserProfile(data.user.id);
+          await loadUserProfile(data.user.id);
           
           // Get user type and redirect accordingly
           const { data: profileData } = await supabase
@@ -222,6 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       
+      console.log("Verifying OTP:", email, otp);
+      
       // Verify OTP
       const { data, error } = await supabase.rpc('verify_otp', {
         p_email: email,
@@ -229,23 +137,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         p_code: otp
       });
       
-      if (error) throw error;
+      console.log("Verify OTP response:", data, error);
+      
+      if (error) {
+        console.error("OTP verification error:", error);
+        throw error;
+      }
       
       if (data === true) {
+        console.log("OTP verified successfully, proceeding with signin");
         // OTP is valid, sign in the user
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password: "dummyPassword" // We'll change this flow in a real implementation
         });
         
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error("Sign in error after OTP verification:", signInError);
+          throw signInError;
+        }
+        
+        console.log("Signed in after OTP verification:", signInData);
         
         // Get user type from local storage
         const userType = localStorage.getItem('medcord_temp_user_type') || 'patient';
         localStorage.removeItem('medcord_temp_user_type'); // Clean up
         
         // Update user type in profile if necessary
-        if (signInData.user) {
+        if (signInData?.user) {
           const { error: updateError } = await supabase
             .from("profiles")
             .update({ user_type: userType })
@@ -259,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return false;
     } catch (error: any) {
+      console.error("Error in verifyOTP:", error);
       toast.error(error.message || "Failed to verify OTP");
       return false;
     } finally {
@@ -269,38 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resendOTP = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      
-      // Request a new OTP
-      const { data: otpData, error: otpError } = await supabase.rpc('create_otp', {
-        p_email: email,
-        p_phone_number: null,
-        p_user_id: null,
-        p_expires_in: '00:10:00'  // 10 minutes expiry
-      });
-      
-      if (otpError) throw otpError;
-      
-      // Send the OTP email
-      try {
-        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-otp-email', {
-          body: {
-            email,
-            otpCode: otpData  // The create_otp function returns the generated code
-          }
-        });
-
-        if (emailError) {
-          console.error("Failed to send OTP email:", emailError);
-          toast.error("Failed to send OTP email. Please try again.");
-          throw new Error(emailError.message || "Failed to send OTP email");
-        }
-
-        toast.success("OTP email sent successfully");
-      } catch (emailSendError) {
-        console.error("Error sending OTP email:", emailSendError);
-        toast.error("Failed to send OTP email. Please try again.");
-        throw emailSendError;
-      }
+      await generateAndSendOTP(email);
+      toast.success("A new OTP has been sent to your email");
     } catch (error: any) {
       toast.error(error.message || "Failed to resend OTP");
       throw error;

@@ -37,7 +37,10 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
     }
 
     try {
+      console.log("Submitting OTP for verification:", otp);
       const success = await verifyOTP(email, otp);
+      
+      console.log("OTP verification result:", success);
       
       if (success) {
         toast.success("OTP verified successfully!");
@@ -60,6 +63,7 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
         toast.error("Invalid OTP. Please try again.");
       }
     } catch (error: any) {
+      console.error("OTP verification error:", error);
       toast.error(error.message || "Failed to verify OTP");
     }
   };
