@@ -1,1 +1,13 @@
+
 project_id = "zhieywexatjtbpkmmyda"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[functions.gemini-health-assistant]
+verify_jwt = true
+
+[functions.send-otp-email]
+verify_jwt = false

@@ -142,15 +142,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (sendOTP) {
         // Request OTP to be sent
-        const { data, error } = await supabase.rpc('create_otp', {
+        const { data: otpData, error: otpError } = await supabase.rpc('create_otp', {
           p_email: email,
           p_phone_number: null,
           p_user_id: null,
           p_expires_in: '00:10:00'  // 10 minutes expiry
         });
         
-        if (error) throw error;
+        if (otpError) throw otpError;
         console.log("OTP requested successfully");
+        
+        // Now call our edge function to send the OTP email
+        try {
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-otp-email', {
+            body: {
+              email,
+              otpCode: otpData  // The create_otp function should return the generated code
+            }
+          });
+
+          if (emailError) {
+            console.error("Failed to send OTP email:", emailError);
+            toast.error("Failed to send OTP email. Please try again.");
+            throw new Error(emailError.message || "Failed to send OTP email");
+          }
+
+          console.log("OTP email sent successfully:", emailData);
+        } catch (emailSendError) {
+          console.error("Error sending OTP email:", emailSendError);
+          toast.error("Failed to send OTP email. Please try again.");
+          throw emailSendError;
+        }
         
         // Store user type temporarily in local storage
         localStorage.setItem('medcord_temp_user_type', userType);
@@ -248,14 +270,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       
       // Request a new OTP
-      const { data, error } = await supabase.rpc('create_otp', {
+      const { data: otpData, error: otpError } = await supabase.rpc('create_otp', {
         p_email: email,
         p_phone_number: null,
         p_user_id: null,
         p_expires_in: '00:10:00'  // 10 minutes expiry
       });
       
-      if (error) throw error;
+      if (otpError) throw otpError;
+      
+      // Send the OTP email
+      try {
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-otp-email', {
+          body: {
+            email,
+            otpCode: otpData  // The create_otp function should return the generated code
+          }
+        });
+
+        if (emailError) {
+          console.error("Failed to send OTP email:", emailError);
+          toast.error("Failed to send OTP email. Please try again.");
+          throw new Error(emailError.message || "Failed to send OTP email");
+        }
+
+        toast.success("OTP email sent successfully");
+      } catch (emailSendError) {
+        console.error("Error sending OTP email:", emailSendError);
+        toast.error("Failed to send OTP email. Please try again.");
+        throw emailSendError;
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to resend OTP");
       throw error;
