@@ -27,43 +27,13 @@ serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email, otpCode } = await req.json();
 
-    if (!email) {
-      throw new Error("Email is required");
+    if (!email || !otpCode) {
+      throw new Error("Email and OTP code are required");
     }
 
-    console.log(`Sending OTP email to: ${email}`);
-
-    // Get the latest OTP for this email from the database
-    const otpResponse = await fetch(`${supabaseUrl}/rest/v1/otp_attempts?email=eq.${encodeURIComponent(email)}&verified=eq.false&order=created_at.desc&limit=1`, {
-      headers: {
-        Authorization: `Bearer ${serviceRoleKey}`,
-        apikey: `${serviceRoleKey}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!otpResponse.ok) {
-      throw new Error(`Failed to fetch OTP: ${otpResponse.statusText}`);
-    }
-
-    const otpData = await otpResponse.json();
-
-    if (!otpData || otpData.length === 0) {
-      throw new Error("No OTP found for this email");
-    }
-
-    const otpRecord = otpData[0];
-    
-    // Since we store a hashed OTP in the DB, we need to send the OTP code that was generated
-    // For this to work, the create_otp function needs to be modified to return the actual code
-    // But for now, we'll fetch it from request data
-    const { otpCode } = await req.json();
-
-    if (!otpCode) {
-      throw new Error("OTP code is required");
-    }
+    console.log(`Sending OTP email to: ${email} with code: ${otpCode}`);
 
     // Send the email using Resend
     const emailResponse = await fetch('https://api.resend.com/emails', {
@@ -94,6 +64,7 @@ serve(async (req) => {
 
     if (!emailResponse.ok) {
       const errorData = await emailResponse.json();
+      console.error("Resend API error response:", errorData);
       throw new Error(`Failed to send email: ${JSON.stringify(errorData)}`);
     }
 

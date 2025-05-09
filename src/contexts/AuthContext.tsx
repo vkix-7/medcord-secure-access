@@ -150,14 +150,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         
         if (otpError) throw otpError;
-        console.log("OTP requested successfully");
+        console.log("OTP requested successfully, code:", otpData);
         
         // Now call our edge function to send the OTP email
         try {
           const { data: emailData, error: emailError } = await supabase.functions.invoke('send-otp-email', {
             body: {
               email,
-              otpCode: otpData  // The create_otp function should return the generated code
+              otpCode: otpData  // The create_otp function returns the generated code
             }
           });
 
@@ -168,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           console.log("OTP email sent successfully:", emailData);
+          toast.success("OTP sent to your email");
         } catch (emailSendError) {
           console.error("Error sending OTP email:", emailSendError);
           toast.error("Failed to send OTP email. Please try again.");
@@ -284,7 +285,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: emailData, error: emailError } = await supabase.functions.invoke('send-otp-email', {
           body: {
             email,
-            otpCode: otpData  // The create_otp function should return the generated code
+            otpCode: otpData  // The create_otp function returns the generated code
           }
         });
 
