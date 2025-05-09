@@ -43,7 +43,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'MedCord <noreply@medcord.app>',
+        from: 'onboarding@resend.dev',  // Using Resend's default domain
         to: email,
         subject: 'Your MedCord Login OTP',
         html: `
