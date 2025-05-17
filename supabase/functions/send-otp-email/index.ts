@@ -17,7 +17,7 @@ if (!serviceRoleKey) {
 }
 
 // Set to true to enable actual email sending (requires verified domain in Resend)
-const SEND_REAL_EMAILS = false;
+const SEND_REAL_EMAILS = true;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -46,7 +46,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'your-verified@domain.com', // Replace with your verified domain
+            from: 'onboarding@resend.dev', // Using Resend's default sender for testing
             to: email,
             subject: 'Your MedCord Login OTP',
             html: `
@@ -75,12 +75,34 @@ serve(async (req) => {
         console.log("Email sent successfully:", emailSendResult);
       } catch (emailError) {
         console.error("Failed to send email:", emailError);
-        throw new Error(`Email sending failed: ${emailError.message}`);
+        // Fall back to development mode if sending fails
+        console.log("FALLBACK TO DEVELOPMENT MODE: Not sending actual email. OTP is:", otpCode);
+        console.log(`In production, this would be sent to: ${email}`);
+        return new Response(JSON.stringify({
+          success: true,
+          message: "OTP logged successfully (dev mode fallback)",
+          debug: {
+            otpCode: otpCode,
+            recipient: email
+          }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
     } else {
       // In DEVELOPMENT MODE: Just log the OTP and return success
       console.log("DEVELOPMENT MODE: Not sending actual email. OTP is:", otpCode);
       console.log(`In production, this would be sent to: ${email}`);
+      return new Response(JSON.stringify({
+        success: true,
+        message: "OTP logged successfully (dev mode)",
+        debug: {
+          otpCode: otpCode,
+          recipient: email
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({

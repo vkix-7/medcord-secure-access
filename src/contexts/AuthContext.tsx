@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,6 +61,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const profileData = await fetchUserProfile(userId);
       setProfile(profileData as UserProfile);
+      
+      // Handle redirection based on user type after profile is loaded
+      if (profileData?.user_type === "patient") {
+        navigate("/patient-dashboard");
+      } else if (profileData?.user_type === "provider") {
+        navigate("/provider-dashboard");
+      } else if (profileData?.user_type === "admin") {
+        navigate("/admin-dashboard");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -105,22 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Fetch the user profile
           await loadUserProfile(data.user.id);
           
-          // Get user type and redirect accordingly
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("user_type")
-            .eq("id", data.user.id)
-            .single();
-            
           toast.success("Logged in successfully");
-          
-          if (profileData?.user_type === "patient") {
-            navigate("/patient-dashboard");
-          } else if (profileData?.user_type === "provider") {
-            navigate("/provider-dashboard");
-          } else {
-            navigate("/admin-dashboard");
-          }
         }
       }
     } catch (error: any) {
@@ -148,15 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         toast.success("Login successful!");
         
-        // Redirect based on user type
-        if (userType === "patient") {
-          navigate("/patient-dashboard");
-        } else if (userType === "provider") {
-          navigate("/provider-dashboard");
-        } else {
-          navigate("/admin-dashboard");
-        }
-        
+        // User will be redirected through the loadUserProfile function
+        // which is called by the auth state change handler
         return true;
       } else {
         toast.error("Invalid OTP or OTP has expired. Please try again.");

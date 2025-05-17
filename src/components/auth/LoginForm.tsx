@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -73,6 +72,7 @@ export default function LoginForm() {
       // Direct login without OTP
       await signIn(formData.email, formData.password, userType, false);
       toast.success("Logged in successfully");
+      // No need to navigate here - AuthContext will handle it
     } catch (error: any) {
       console.error("Direct login failed:", error);
       toast.error(error.message || "Login failed. Please check your credentials.");
