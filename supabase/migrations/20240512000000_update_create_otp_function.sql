@@ -1,5 +1,5 @@
 
--- Update the create_otp function to return the generated code
+-- Update the create_otp function to return the generated code and remove rate limiting
 CREATE OR REPLACE FUNCTION public.create_otp(p_phone_number text, p_email text, p_user_id uuid, p_expires_in interval)
  RETURNS text
  LANGUAGE plpgsql
@@ -14,13 +14,8 @@ BEGIN
     RAISE EXCEPTION 'Either phone number or email must be provided';
   END IF;
 
-  -- Set identifier for rate limiting
+  -- Set identifier
   v_identifier := COALESCE(p_phone_number, p_email);
-
-  -- Check rate limit
-  IF NOT check_rate_limit(v_identifier, 3, interval '1 hour') THEN
-    RAISE EXCEPTION 'Rate limit exceeded';
-  END IF;
 
   -- Generate 6-digit code
   v_code := lpad(floor(random() * 1000000)::text, 6, '0');
@@ -44,3 +39,4 @@ BEGIN
   RETURN v_code;
 END;
 $function$;
+

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface ForgotPasswordFormProps {
   onBack: () => void;
@@ -25,13 +26,18 @@ export default function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      try {
-        await forgotPassword(email);
-        setIsSubmitted(true);
-      } catch (error) {
-        // Error is handled in AuthContext with toast
-      }
+    if (!email) {
+      toast.error("Please enter your email address");
+      return;
+    }
+    
+    try {
+      await forgotPassword(email);
+      setIsSubmitted(true);
+      toast.success(`Password reset instructions sent to ${email}`);
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast.error(error.message || "Failed to send password reset email");
     }
   };
 

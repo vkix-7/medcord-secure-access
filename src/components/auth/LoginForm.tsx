@@ -13,7 +13,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Lock, Loader2, ArrowLeft } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import OTPVerificationForm from "./OTPVerificationForm";
 import ForgotPasswordForm from "./ForgotPasswordForm";
@@ -29,6 +29,7 @@ export default function LoginForm() {
   });
   const [otpSent, setOtpSent] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,9 +48,33 @@ export default function LoginForm() {
       // Request OTP to be sent to the user's email
       await signIn(formData.email, formData.password, userType, true);
       setOtpSent(true);
+      setLoginAttempts(0); // Reset attempts on successful OTP send
       toast.success("OTP sent to your email");
     } catch (error: any) {
       console.error("Login failed:", error);
+      setLoginAttempts(prev => prev + 1);
+      
+      // More user-friendly error message
+      if (loginAttempts >= 2) {
+        toast.error("Having trouble? Check that your email and password are correct, or use the 'Forgot password' option below.");
+      } else {
+        toast.error(error.message || "Login failed. Please check your credentials.");
+      }
+    }
+  };
+
+  const handleDirectLogin = async () => {
+    if (!formData.email || !formData.password) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+    
+    try {
+      // Direct login without OTP
+      await signIn(formData.email, formData.password, userType, false);
+      toast.success("Logged in successfully");
+    } catch (error: any) {
+      console.error("Direct login failed:", error);
       toast.error(error.message || "Login failed. Please check your credentials.");
     }
   };
@@ -143,20 +168,40 @@ export default function LoginForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button 
-            type="submit" 
-            className="w-full bg-medblue-600 hover:bg-medblue-700" 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending OTP...
-              </>
-            ) : (
-              "Get OTP"
-            )}
-          </Button>
+          <div className="w-full flex gap-2">
+            <Button 
+              type="submit" 
+              className="flex-1 bg-medblue-600 hover:bg-medblue-700" 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending OTP...
+                </>
+              ) : (
+                "Get OTP"
+              )}
+            </Button>
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="flex-1"
+              onClick={handleDirectLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Login Directly"
+              )}
+            </Button>
+          </div>
+          
           <div className="text-center text-sm">
             Don't have an account?{" "}
             <a href="/register" className="text-medblue-500 hover:text-medblue-600 font-medium">

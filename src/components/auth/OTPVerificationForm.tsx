@@ -3,10 +3,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, ArrowLeft } from "lucide-react";
 
 interface OTPVerificationFormProps {
   email: string;
@@ -20,7 +19,6 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const { verifyOTP, resendOTP, isLoading } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -68,6 +66,15 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="space-y-1">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onBack} 
+          className="w-fit -ml-2 mb-2"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Login
+        </Button>
         <CardTitle className="text-2xl">Verify Your Identity</CardTitle>
         <CardDescription>
           Enter the 6-digit code sent to {email}
@@ -86,6 +93,9 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
             </InputOTPGroup>
           </InputOTP>
         </div>
+        <div className="text-sm text-center text-muted-foreground">
+          Didn't receive the code? Make sure to check your spam folder.
+        </div>
       </CardContent>
       <CardFooter className="flex flex-col space-y-4">
         <Button 
@@ -102,10 +112,7 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
             "Verify & Log In"
           )}
         </Button>
-        <div className="flex justify-between items-center w-full text-sm">
-          <Button variant="ghost" onClick={onBack} size="sm" className="p-0">
-            &larr; Back to Login
-          </Button>
+        <div className="flex justify-center items-center w-full text-sm">
           <Button 
             variant="link" 
             onClick={handleResendOTP}
@@ -119,7 +126,7 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
                 Resending...
               </>
             ) : countdown > 0 ? (
-              `Resend in ${countdown}s`
+              `Resend OTP in ${countdown}s`
             ) : (
               <>
                 <RefreshCw className="mr-1 h-3 w-3" />

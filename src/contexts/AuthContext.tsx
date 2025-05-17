@@ -146,6 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('medcord_temp_password');
         localStorage.removeItem('medcord_temp_user_type');
         
+        toast.success("Login successful!");
+        
         // Redirect based on user type
         if (userType === "patient") {
           navigate("/patient-dashboard");
@@ -156,6 +158,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         return true;
+      } else {
+        toast.error("Invalid OTP or OTP has expired. Please try again.");
       }
       
       return false;
@@ -172,6 +176,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       await generateAndSendOTP(email);
+      
+      // Store password again in case it was lost
+      localStorage.setItem('medcord_temp_password', password);
+      
       toast.success("A new OTP has been sent to your email");
     } catch (error: any) {
       toast.error(error.message || "Failed to resend OTP");

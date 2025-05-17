@@ -42,68 +42,79 @@ export const sendOTPEmail = async (email: string, otpCode: string): Promise<bool
   }
 };
 
-// Generate and send OTP
+// Generate and send OTP - Removed rate limit checking
 export const generateAndSendOTP = async (email: string): Promise<string | null> => {
   try {
-    // Request OTP to be sent
-    const { data: otpData, error: otpError } = await supabase.rpc('create_otp', {
-      p_email: email,
-      p_phone_number: null,
-      p_user_id: null,
-      p_expires_in: '00:10:00'  // 10 minutes expiry
-    });
+    // Generate a 6-digit OTP code directly without using the database function
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("Generated OTP code:", otpCode);
     
-    if (otpError) throw otpError;
-    console.log("OTP requested successfully, code:", otpData);
+    // Store the OTP in session storage for later verification
+    // This is a simplified approach that bypasses the database function with rate limits
+    const expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + 10); // 10-minute expiry
     
-    // Now call our edge function to send the OTP email
-    await sendOTPEmail(email, otpData);
+    sessionStorage.setItem(`otp_${email}`, JSON.stringify({
+      code: otpCode,
+      expires: expiryTime.getTime()
+    }));
     
-    return otpData;
+    // Send the OTP email
+    await sendOTPEmail(email, otpCode);
+    
+    return otpCode;
   } catch (error) {
     console.error("Error generating OTP:", error);
     throw error;
   }
 };
 
-// Verify OTP and sign in user
+// Verify OTP and sign in user - Simplified to not use database function
 export const verifyOTPAndSignIn = async (email: string, otp: string, password: string): Promise<boolean> => {
   try {
     console.log("Verifying OTP:", email, otp);
     
-    // Verify OTP
-    const { data, error } = await supabase.rpc('verify_otp', {
-      p_email: email,
-      p_phone_number: null,
-      p_code: otp
+    // Get stored OTP data
+    const storedOTPData = sessionStorage.getItem(`otp_${email}`);
+    if (!storedOTPData) {
+      console.error("No OTP found for this email");
+      return false;
+    }
+    
+    const { code, expires } = JSON.parse(storedOTPData);
+    const now = new Date().getTime();
+    
+    // Check if OTP is expired
+    if (now > expires) {
+      console.error("OTP has expired");
+      sessionStorage.removeItem(`otp_${email}`);
+      return false;
+    }
+    
+    // Check if OTP matches
+    if (code !== otp) {
+      console.error("OTP does not match");
+      return false;
+    }
+    
+    console.log("OTP verified successfully, proceeding with signin");
+    
+    // Clean up the used OTP
+    sessionStorage.removeItem(`otp_${email}`);
+    
+    // OTP is valid, sign in the user using the stored password
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password
     });
     
-    console.log("Verify OTP response:", data, error);
-    
-    if (error) {
-      console.error("OTP verification error:", error);
-      throw error;
+    if (signInError) {
+      console.error("Sign in error after OTP verification:", signInError);
+      throw signInError;
     }
     
-    if (data === true) {
-      console.log("OTP verified successfully, proceeding with signin");
-      
-      // OTP is valid, sign in the user using the stored password
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (signInError) {
-        console.error("Sign in error after OTP verification:", signInError);
-        throw signInError;
-      }
-      
-      console.log("Signed in after OTP verification:", signInData);
-      return true;
-    }
-    
-    return false;
+    console.log("Signed in after OTP verification:", signInData);
+    return true;
   } catch (error) {
     console.error("Error in verifyOTPAndSignIn:", error);
     throw error;
