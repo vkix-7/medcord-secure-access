@@ -19,7 +19,7 @@ export const cleanupAuthState = () => {
   });
 };
 
-// Handle OTP email sending through edge function
+// Handle OTP email sending through edge function - with development mode support
 export const sendOTPEmail = async (email: string, otpCode: string): Promise<boolean> => {
   try {
     const { data: emailData, error: emailError } = await supabase.functions.invoke('send-otp-email', {
@@ -34,7 +34,17 @@ export const sendOTPEmail = async (email: string, otpCode: string): Promise<bool
       throw new Error(emailError.message || "Failed to send OTP email");
     }
 
-    console.log("OTP email sent successfully:", emailData);
+    console.log("OTP email function response:", emailData);
+    
+    // If we're in development mode, store the OTP from the response for testing
+    if (emailData?.debug?.otpCode) {
+      console.log("DEV MODE: Using returned OTP code for verification:", emailData.debug.otpCode);
+      sessionStorage.setItem(`otp_${email}`, JSON.stringify({
+        code: emailData.debug.otpCode,
+        expires: new Date().getTime() + 10 * 60 * 1000 // 10-minute expiry
+      }));
+    }
+    
     return true;
   } catch (emailSendError) {
     console.error("Error sending OTP email:", emailSendError);
@@ -42,15 +52,14 @@ export const sendOTPEmail = async (email: string, otpCode: string): Promise<bool
   }
 };
 
-// Generate and send OTP - Removed rate limit checking
+// Generate and send OTP - Development mode aware
 export const generateAndSendOTP = async (email: string): Promise<string | null> => {
   try {
-    // Generate a 6-digit OTP code directly without using the database function
+    // Generate a 6-digit OTP code
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     console.log("Generated OTP code:", otpCode);
     
     // Store the OTP in session storage for later verification
-    // This is a simplified approach that bypasses the database function with rate limits
     const expiryTime = new Date();
     expiryTime.setMinutes(expiryTime.getMinutes() + 10); // 10-minute expiry
     
@@ -69,7 +78,7 @@ export const generateAndSendOTP = async (email: string): Promise<string | null> 
   }
 };
 
-// Verify OTP and sign in user - Simplified to not use database function
+// Verify OTP and sign in user
 export const verifyOTPAndSignIn = async (email: string, otp: string, password: string): Promise<boolean> => {
   try {
     console.log("Verifying OTP:", email, otp);

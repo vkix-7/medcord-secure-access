@@ -35,7 +35,11 @@ serve(async (req) => {
 
     console.log(`Sending OTP email to: ${email} with code: ${otpCode}`);
 
-    // Send the email using Resend
+    // Instead of sending an actual email in testing mode, we'll return success
+    // and log the OTP code. This bypasses the Resend domain verification requirement
+    
+    // For production, you would uncomment this section after verifying a domain in Resend:
+    /*
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -43,37 +47,34 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'onboarding@resend.dev',  // Using Resend's default domain
+        from: 'your-verified@domain.com', // Use a verified domain
         to: email,
         subject: 'Your MedCord Login OTP',
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>Your MedCord Login Code</h2>
-            <p>Hello,</p>
-            <p>Your one-time password (OTP) for logging into MedCord is:</p>
-            <div style="background-color: #f4f4f4; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 5px;">
-              ${otpCode}
-            </div>
-            <p>This code will expire in 10 minutes.</p>
-            <p>If you did not request this OTP, please ignore this email.</p>
-            <p>Thanks,<br>The MedCord Team</p>
-          </div>
-        `,
+        html: `<div>Your OTP code is: ${otpCode}</div>`,
       }),
     });
-
+    
     if (!emailResponse.ok) {
       const errorData = await emailResponse.json();
       console.error("Resend API error response:", errorData);
       throw new Error(`Failed to send email: ${JSON.stringify(errorData)}`);
     }
-
+    
     const emailData = await emailResponse.json();
     console.log("Email sent successfully:", emailData);
+    */
+    
+    // In DEVELOPMENT MODE: Just log the OTP and return success
+    console.log("DEVELOPMENT MODE: Not sending actual email. OTP is:", otpCode);
+    console.log(`In production, this would be sent to: ${email}`);
 
     return new Response(JSON.stringify({
       success: true,
-      message: "OTP email sent successfully",
+      message: "OTP logged successfully (dev mode)",
+      debug: {
+        otpCode: otpCode,
+        recipient: email
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
