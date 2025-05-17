@@ -13,9 +13,10 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Lock, Loader2 } from "lucide-react";
+import { Lock, Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import OTPVerificationForm from "./OTPVerificationForm";
+import ForgotPasswordForm from "./ForgotPasswordForm";
 import { toast } from "sonner";
 
 export default function LoginForm() {
@@ -27,6 +28,7 @@ export default function LoginForm() {
     password: "",
   });
   const [otpSent, setOtpSent] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,6 +53,14 @@ export default function LoginForm() {
       toast.error(error.message || "Login failed. Please check your credentials.");
     }
   };
+
+  if (showForgotPassword) {
+    return (
+      <ForgotPasswordForm 
+        onBack={() => setShowForgotPassword(false)}
+      />
+    );
+  }
 
   if (otpSent) {
     return (
@@ -113,9 +123,14 @@ export default function LoginForm() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <a href="#" className="text-xs text-medblue-500 hover:text-medblue-600">
+              <Button 
+                type="button" 
+                variant="link" 
+                className="p-0 h-auto text-xs text-medblue-500 hover:text-medblue-600"
+                onClick={() => setShowForgotPassword(true)}
+              >
                 Forgot your password?
-              </a>
+              </Button>
             </div>
             <Input
               id="password"

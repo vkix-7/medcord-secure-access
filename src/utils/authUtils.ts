@@ -66,6 +66,69 @@ export const generateAndSendOTP = async (email: string): Promise<string | null> 
   }
 };
 
+// Verify OTP and sign in user
+export const verifyOTPAndSignIn = async (email: string, otp: string, password: string): Promise<boolean> => {
+  try {
+    console.log("Verifying OTP:", email, otp);
+    
+    // Verify OTP
+    const { data, error } = await supabase.rpc('verify_otp', {
+      p_email: email,
+      p_phone_number: null,
+      p_code: otp
+    });
+    
+    console.log("Verify OTP response:", data, error);
+    
+    if (error) {
+      console.error("OTP verification error:", error);
+      throw error;
+    }
+    
+    if (data === true) {
+      console.log("OTP verified successfully, proceeding with signin");
+      
+      // OTP is valid, sign in the user using the stored password
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (signInError) {
+        console.error("Sign in error after OTP verification:", signInError);
+        throw signInError;
+      }
+      
+      console.log("Signed in after OTP verification:", signInData);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error in verifyOTPAndSignIn:", error);
+    throw error;
+  }
+};
+
+// Password reset functionality
+export const resetPassword = async (email: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    
+    if (error) {
+      console.error("Error sending password reset:", error);
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Failed to send password reset email:", error);
+    throw error;
+  }
+};
+
 // Profile fetching logic
 export const fetchUserProfile = async (userId: string) => {
   try {

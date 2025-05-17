@@ -32,4 +32,5 @@ export interface AuthContextProps {
   signOut: () => Promise<void>;
   verifyOTP: (email: string, otp: string) => Promise<boolean>;
   resendOTP: (email: string, password: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<boolean>;
 }

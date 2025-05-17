@@ -4,7 +4,13 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { cleanupAuthState, generateAndSendOTP, fetchUserProfile } from "@/utils/authUtils";
+import { 
+  cleanupAuthState, 
+  generateAndSendOTP, 
+  fetchUserProfile, 
+  verifyOTPAndSignIn, 
+  resetPassword 
+} from "@/utils/authUtils";
 import { AuthContextProps, UserProfile, UserSignUpData } from "@/hooks/useAuthTypes";
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -80,8 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Generate and send OTP
         await generateAndSendOTP(email);
         
-        // Store user type temporarily in local storage
+        // Store user type and password temporarily in local storage
         localStorage.setItem('medcord_temp_user_type', userType);
+        localStorage.setItem('medcord_temp_password', password);
         
         toast.success("OTP sent to your email");
         return;
@@ -127,50 +134,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyOTP = async (email: string, otp: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      const password = localStorage.getItem('medcord_temp_password') || '';
+      const userType = localStorage.getItem('medcord_temp_user_type') || 'patient';
       
       console.log("Verifying OTP:", email, otp);
       
-      // Verify OTP
-      const { data, error } = await supabase.rpc('verify_otp', {
-        p_email: email,
-        p_phone_number: null,
-        p_code: otp
-      });
+      const success = await verifyOTPAndSignIn(email, otp, password);
       
-      console.log("Verify OTP response:", data, error);
-      
-      if (error) {
-        console.error("OTP verification error:", error);
-        throw error;
-      }
-      
-      if (data === true) {
-        console.log("OTP verified successfully, proceeding with signin");
-        // OTP is valid, sign in the user
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password: "dummyPassword" // We'll change this flow in a real implementation
-        });
+      if (success) {
+        // Clean up temp storage
+        localStorage.removeItem('medcord_temp_password');
+        localStorage.removeItem('medcord_temp_user_type');
         
-        if (signInError) {
-          console.error("Sign in error after OTP verification:", signInError);
-          throw signInError;
-        }
-        
-        console.log("Signed in after OTP verification:", signInData);
-        
-        // Get user type from local storage
-        const userType = localStorage.getItem('medcord_temp_user_type') || 'patient';
-        localStorage.removeItem('medcord_temp_user_type'); // Clean up
-        
-        // Update user type in profile if necessary
-        if (signInData?.user) {
-          const { error: updateError } = await supabase
-            .from("profiles")
-            .update({ user_type: userType })
-            .eq("id", signInData.user.id);
-            
-          if (updateError) console.error("Failed to update user type:", updateError);
+        // Redirect based on user type
+        if (userType === "patient") {
+          navigate("/patient-dashboard");
+        } else if (userType === "provider") {
+          navigate("/provider-dashboard");
+        } else {
+          navigate("/admin-dashboard");
         }
         
         return true;
@@ -228,6 +210,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const forgotPassword = async (email: string) => {
+    try {
+      setIsLoading(true);
+      const result = await resetPassword(email);
+      if (result) {
+        toast.success("Password reset instructions sent to your email");
+      }
+      return result;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send password reset email");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signOut = async () => {
     try {
       // Clean up auth state
@@ -257,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         verifyOTP,
         resendOTP,
+        forgotPassword,
       }}
     >
       {children}

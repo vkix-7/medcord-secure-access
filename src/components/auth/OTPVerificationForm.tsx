@@ -42,26 +42,10 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
       
       console.log("OTP verification result:", success);
       
-      if (success) {
-        toast.success("OTP verified successfully!");
-        
-        // Redirect based on user type
-        switch (userType) {
-          case "patient":
-            navigate("/patient-dashboard");
-            break;
-          case "provider":
-            navigate("/provider-dashboard");
-            break;
-          case "admin":
-            navigate("/admin-dashboard");
-            break;
-          default:
-            navigate("/");
-        }
-      } else {
-        toast.error("Invalid OTP. Please try again.");
+      if (!success) {
+        toast.error("Invalid OTP or OTP has expired. Please try again.");
       }
+      // Redirect is handled in the verifyOTP function in AuthContext
     } catch (error: any) {
       console.error("OTP verification error:", error);
       toast.error(error.message || "Failed to verify OTP");
