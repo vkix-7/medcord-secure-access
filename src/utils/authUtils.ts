@@ -19,7 +19,7 @@ export const cleanupAuthState = () => {
   });
 };
 
-// Handle OTP email sending through edge function - with development mode support
+// Handle OTP email sending through edge function
 export const sendOTPEmail = async (email: string, otpCode: string): Promise<boolean> => {
   try {
     const { data: emailData, error: emailError } = await supabase.functions.invoke('send-otp-email', {
@@ -36,15 +36,6 @@ export const sendOTPEmail = async (email: string, otpCode: string): Promise<bool
 
     console.log("OTP email function response:", emailData);
     
-    // If we're in development mode, store the OTP from the response for testing
-    if (emailData?.debug?.otpCode) {
-      console.log("DEV MODE: Using returned OTP code for verification:", emailData.debug.otpCode);
-      sessionStorage.setItem(`otp_${email}`, JSON.stringify({
-        code: emailData.debug.otpCode,
-        expires: new Date().getTime() + 10 * 60 * 1000 // 10-minute expiry
-      }));
-    }
-    
     return true;
   } catch (emailSendError) {
     console.error("Error sending OTP email:", emailSendError);
@@ -52,7 +43,7 @@ export const sendOTPEmail = async (email: string, otpCode: string): Promise<bool
   }
 };
 
-// Generate and send OTP - Development mode aware
+// Generate and send OTP
 export const generateAndSendOTP = async (email: string): Promise<string | null> => {
   try {
     // Generate a 6-digit OTP code

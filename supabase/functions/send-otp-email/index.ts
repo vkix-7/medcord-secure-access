@@ -16,9 +16,6 @@ if (!serviceRoleKey) {
   throw new Error("Service role key is required");
 }
 
-// Set to true to enable actual email sending (requires verified domain in Resend)
-const SEND_REAL_EMAILS = true;
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -34,89 +31,57 @@ serve(async (req) => {
 
     console.log(`Sending OTP email to: ${email} with code: ${otpCode}`);
 
-    let emailSendResult = null;
-    
-    // Check if we should send real emails
-    if (SEND_REAL_EMAILS && resendApiKey) {
-      try {
-        const emailResponse = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'onboarding@resend.dev', // Using Resend's default sender for testing
-            to: email,
-            subject: 'Your MedCord Login OTP',
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2>Your MedCord Login Code</h2>
-                <p>Hello,</p>
-                <p>Your one-time password (OTP) for logging into MedCord is:</p>
-                <div style="background-color: #f4f4f4; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 5px;">
-                  ${otpCode}
-                </div>
-                <p>This code will expire in 10 minutes.</p>
-                <p>If you did not request this OTP, please ignore this email.</p>
-                <p>Thanks,<br>The MedCord Team</p>
+    if (!resendApiKey) {
+      throw new Error("Resend API key is not configured");
+    }
+
+    try {
+      const emailResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'onboarding@resend.dev', // Using Resend's default sender for testing
+          to: email,
+          subject: 'Your MedCord Login OTP',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Your MedCord Login Code</h2>
+              <p>Hello,</p>
+              <p>Your one-time password (OTP) for logging into MedCord is:</p>
+              <div style="background-color: #f4f4f4; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 5px;">
+                ${otpCode}
               </div>
-            `,
-          }),
-        });
-        
-        if (!emailResponse.ok) {
-          const errorData = await emailResponse.json();
-          console.error("Resend API error response:", errorData);
-          throw new Error(`Failed to send email: ${JSON.stringify(errorData)}`);
-        }
-        
-        emailSendResult = await emailResponse.json();
-        console.log("Email sent successfully:", emailSendResult);
-      } catch (emailError) {
-        console.error("Failed to send email:", emailError);
-        // Fall back to development mode if sending fails
-        console.log("FALLBACK TO DEVELOPMENT MODE: Not sending actual email. OTP is:", otpCode);
-        console.log(`In production, this would be sent to: ${email}`);
-        return new Response(JSON.stringify({
-          success: true,
-          message: "OTP logged successfully (dev mode fallback)",
-          debug: {
-            otpCode: otpCode,
-            recipient: email
-          }
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+              <p>This code will expire in 10 minutes.</p>
+              <p>If you did not request this OTP, please ignore this email.</p>
+              <p>Thanks,<br>The MedCord Team</p>
+            </div>
+          `,
+        }),
+      });
+      
+      if (!emailResponse.ok) {
+        const errorData = await emailResponse.json();
+        console.error("Resend API error response:", errorData);
+        throw new Error(`Failed to send email: ${JSON.stringify(errorData)}`);
       }
-    } else {
-      // In DEVELOPMENT MODE: Just log the OTP and return success
-      console.log("DEVELOPMENT MODE: Not sending actual email. OTP is:", otpCode);
-      console.log(`In production, this would be sent to: ${email}`);
+      
+      const emailSendResult = await emailResponse.json();
+      console.log("Email sent successfully:", emailSendResult);
+      
       return new Response(JSON.stringify({
         success: true,
-        message: "OTP logged successfully (dev mode)",
-        debug: {
-          otpCode: otpCode,
-          recipient: email
-        }
+        message: "OTP email sent successfully",
+        email_data: emailSendResult
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    } catch (emailError) {
+      console.error("Failed to send email:", emailError);
+      throw emailError;
     }
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: SEND_REAL_EMAILS ? "OTP email sent successfully" : "OTP logged successfully (dev mode)",
-      debug: !SEND_REAL_EMAILS ? {
-        otpCode: otpCode,
-        recipient: email
-      } : undefined,
-      email_data: SEND_REAL_EMAILS ? emailSendResult : undefined
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
   } catch (error) {
     console.error("Error in send-otp-email function:", error);
     return new Response(JSON.stringify({

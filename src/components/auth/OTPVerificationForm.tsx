@@ -21,23 +21,6 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
   const { verifyOTP, resendOTP, isLoading } = useAuth();
 
   useEffect(() => {
-    // Check if we have an OTP code in sessionStorage (from dev mode)
-    const storedOTPData = sessionStorage.getItem(`otp_${email}`);
-    if (storedOTPData) {
-      try {
-        const { code } = JSON.parse(storedOTPData);
-        toast.info("DEV MODE: Auto-filling OTP from development mode", {
-          description: `OTP: ${code}`,
-          duration: 5000,
-        });
-        setOtp(code);
-      } catch (e) {
-        console.error("Error parsing stored OTP:", e);
-      }
-    }
-  }, [email]);
-
-  useEffect(() => {
     let timer: NodeJS.Timeout;
     if (countdown > 0) {
       timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
@@ -73,23 +56,6 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
       await resendOTP(email, password);
       setCountdown(60);
       toast.success("A new OTP has been sent to your email");
-
-      // Check if we're in development mode and show the OTP
-      setTimeout(() => {
-        const storedOTPData = sessionStorage.getItem(`otp_${email}`);
-        if (storedOTPData) {
-          try {
-            const { code } = JSON.parse(storedOTPData);
-            toast.info("DEV MODE: New OTP generated", {
-              description: `OTP: ${code}`,
-              duration: 5000,
-            });
-            setOtp(code);
-          } catch (e) {
-            console.error("Error parsing stored OTP:", e);
-          }
-        }
-      }, 1000);
     } catch (error: any) {
       toast.error(error.message || "Failed to resend OTP");
     } finally {
@@ -130,11 +96,6 @@ export default function OTPVerificationForm({ email, password, userType, onBack 
         <div className="text-sm text-center text-muted-foreground">
           Didn't receive the code? Make sure to check your spam folder.
         </div>
-        {process.env.NODE_ENV !== 'production' && (
-          <div className="text-sm text-center bg-yellow-50 p-2 rounded-md text-amber-600 border border-amber-200">
-            Development Mode: OTP is shown in console and auto-filled when available
-          </div>
-        )}
       </CardContent>
       <CardFooter className="flex flex-col space-y-4">
         <Button 

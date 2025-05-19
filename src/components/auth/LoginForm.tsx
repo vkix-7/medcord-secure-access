@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -59,23 +60,6 @@ export default function LoginForm() {
       } else {
         toast.error(error.message || "Login failed. Please check your credentials.");
       }
-    }
-  };
-
-  const handleDirectLogin = async () => {
-    if (!formData.email || !formData.password) {
-      toast.error("Please enter both email and password");
-      return;
-    }
-    
-    try {
-      // Direct login without OTP
-      await signIn(formData.email, formData.password, userType, false);
-      toast.success("Logged in successfully");
-      // No need to navigate here - AuthContext will handle it
-    } catch (error: any) {
-      console.error("Direct login failed:", error);
-      toast.error(error.message || "Login failed. Please check your credentials.");
     }
   };
 
@@ -168,39 +152,20 @@ export default function LoginForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <div className="w-full flex gap-2">
-            <Button 
-              type="submit" 
-              className="flex-1 bg-medblue-600 hover:bg-medblue-700" 
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending OTP...
-                </>
-              ) : (
-                "Get OTP"
-              )}
-            </Button>
-            
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="flex-1"
-              onClick={handleDirectLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                "Login Directly"
-              )}
-            </Button>
-          </div>
+          <Button 
+            type="submit" 
+            className="w-full bg-medblue-600 hover:bg-medblue-700" 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending OTP...
+              </>
+            ) : (
+              "Login with OTP"
+            )}
+          </Button>
           
           <div className="text-center text-sm">
             Don't have an account?{" "}
