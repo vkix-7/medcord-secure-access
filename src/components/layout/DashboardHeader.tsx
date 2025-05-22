@@ -1,3 +1,4 @@
+
 import { Bell, Gift, Moon, Sun } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar"; // only if SidebarTrigger is actually exported
 
@@ -11,6 +12,7 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -25,6 +27,8 @@ export default function DashboardHeader({ userName = "User", setActiveTab }: Das
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     return (savedTheme as 'light' | 'dark') || (prefersDark ? 'dark' : 'light');
   });
+  
+  const { signOut } = useAuth();
 
   useEffect(() => {
     // Update the theme in localStorage and document
@@ -39,6 +43,10 @@ export default function DashboardHeader({ userName = "User", setActiveTab }: Das
 
   const getUserInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const handleLogout = () => {
+    signOut();
   };
 
   return (
@@ -98,7 +106,7 @@ export default function DashboardHeader({ userName = "User", setActiveTab }: Das
               <DropdownMenuItem onClick={() => setActiveTab?.("profile")}>Profile</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setActiveTab?.("settings")}>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
