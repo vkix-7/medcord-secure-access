@@ -7,7 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Get the service role key from environment variables
 const supabaseUrl = "https://zhieywexatjtbpkmmyda.supabase.co";
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -43,7 +42,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'onboarding@resend.dev', // Using Resend's default sender for testing
+          from: 'MedCord <onboarding@resend.dev>',
           to: email,
           subject: 'Your MedCord Login OTP',
           html: `
