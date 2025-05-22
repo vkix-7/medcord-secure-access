@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import PatientDashboard from "./pages/PatientDashboard";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import ChatPage from "./pages/ChatPage";
 import NotFound from "./pages/NotFound";
 import AuthGuard from "./components/auth/AuthGuard";
 
@@ -51,6 +52,14 @@ const App = () => (
                 element={
                   <AuthGuard userType="provider">
                     <ProviderDashboard />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/chat" 
+                element={
+                  <AuthGuard userType="any">
+                    <ChatPage />
                   </AuthGuard>
                 } 
               />
