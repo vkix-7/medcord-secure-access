@@ -100,13 +100,15 @@ export default function ChatInterface() {
         <Card className="md:col-span-1">
           <CardContent className="p-3 h-full flex flex-col">
             <div className="pb-3">
-              <Input
-                className="w-full"
-                placeholder="Search contacts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                startIcon={<Search className="h-4 w-4" />}
-              />
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-10"
+                  placeholder="Search contacts..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
             
             <Separator className="my-2" />
