@@ -27,7 +27,7 @@ export interface AuthContextProps {
   user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
-  signIn: (email: string, password: string, userType?: "patient" | "provider" | "admin", sendOTP?: boolean) => Promise<void>;
+  signIn: (email: string, password: string, userType?: "patient" | "provider" | "admin") => Promise<void>;
   signUp: (email: string, password: string, userData: UserSignUpData) => Promise<void>;
   signOut: () => Promise<void>;
   verifyOTP: (email: string, otp: string) => Promise<boolean>;

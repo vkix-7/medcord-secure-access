@@ -5,9 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { 
   cleanupAuthState, 
-  generateAndSendOTP, 
   fetchUserProfile, 
-  verifyOTPAndSignIn, 
   resetPassword 
 } from "@/utils/authUtils";
 import { AuthContextProps, UserProfile, UserSignUpData } from "@/hooks/useAuthTypes";
@@ -75,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string, userType: "patient" | "provider" | "admin" = "patient", sendOTP: boolean = false) => {
+  const signIn = async (email: string, password: string, userType: "patient" | "provider" | "admin" = "patient") => {
     try {
       setIsLoading(true);
       
@@ -90,85 +88,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Global sign out failed, continuing:", err);
       }
       
-      if (sendOTP) {
-        // Generate and send OTP
-        await generateAndSendOTP(email);
-        
-        // Store user type and password temporarily in local storage
-        localStorage.setItem('medcord_temp_user_type', userType);
-        localStorage.setItem('medcord_temp_password', password);
-        
-        toast.success("OTP sent to your email");
-        return;
-      } else {
-        // Standard sign in
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      // Direct sign in with password
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-        if (error) throw error;
+      if (error) throw error;
+      
+      if (data.user) {
+        // Fetch the user profile
+        await loadUserProfile(data.user.id);
         
-        if (data.user) {
-          // Fetch the user profile
-          await loadUserProfile(data.user.id);
-          
-          toast.success("Logged in successfully");
-        }
+        toast.success("Logged in successfully");
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in");
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const verifyOTP = async (email: string, otp: string): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      const password = localStorage.getItem('medcord_temp_password') || '';
-      const userType = localStorage.getItem('medcord_temp_user_type') || 'patient';
-      
-      console.log("Verifying OTP:", email, otp);
-      
-      const success = await verifyOTPAndSignIn(email, otp, password);
-      
-      if (success) {
-        // Clean up temp storage
-        localStorage.removeItem('medcord_temp_password');
-        localStorage.removeItem('medcord_temp_user_type');
-        
-        toast.success("Login successful!");
-        
-        // User will be redirected through the loadUserProfile function
-        // which is called by the auth state change handler
-        return true;
-      } else {
-        toast.error("Invalid OTP or OTP has expired. Please try again.");
-      }
-      
-      return false;
-    } catch (error: any) {
-      console.error("Error in verifyOTP:", error);
-      toast.error(error.message || "Failed to verify OTP");
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const resendOTP = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      await generateAndSendOTP(email);
-      
-      // Store password again in case it was lost
-      localStorage.setItem('medcord_temp_password', password);
-      
-      toast.success("A new OTP has been sent to your email");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to resend OTP");
       throw error;
     } finally {
       setIsLoading(false);
@@ -247,8 +182,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signUp,
         signOut,
-        verifyOTP,
-        resendOTP,
+        // Keep these functions for backwards compatibility but they won't be used
+        verifyOTP: async () => false,
+        resendOTP: async () => {},
         forgotPassword,
       }}
     >

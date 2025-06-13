@@ -15,7 +15,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import OTPVerificationForm from "./OTPVerificationForm";
 import ForgotPasswordForm from "./ForgotPasswordForm";
 import { toast } from "sonner";
 
@@ -27,7 +26,6 @@ export default function LoginForm() {
     email: "",
     password: "",
   });
-  const [otpSent, setOtpSent] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
 
@@ -45,11 +43,10 @@ export default function LoginForm() {
     }
     
     try {
-      // Request OTP to be sent to the user's email
-      await signIn(formData.email, formData.password, userType, true);
-      setOtpSent(true);
-      setLoginAttempts(0); // Reset attempts on successful OTP send
-      toast.success("OTP sent to your email");
+      // Direct sign in without OTP
+      await signIn(formData.email, formData.password, userType, false);
+      setLoginAttempts(0); // Reset attempts on successful login
+      toast.success("Login successful!");
     } catch (error: any) {
       console.error("Login failed:", error);
       setLoginAttempts(prev => prev + 1);
@@ -67,17 +64,6 @@ export default function LoginForm() {
     return (
       <ForgotPasswordForm 
         onBack={() => setShowForgotPassword(false)}
-      />
-    );
-  }
-
-  if (otpSent) {
-    return (
-      <OTPVerificationForm 
-        email={formData.email} 
-        password={formData.password}
-        userType={userType} 
-        onBack={() => setOtpSent(false)}
       />
     );
   }
@@ -160,10 +146,10 @@ export default function LoginForm() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending OTP...
+                Signing in...
               </>
             ) : (
-              "Login with OTP"
+              "Sign In"
             )}
           </Button>
           
