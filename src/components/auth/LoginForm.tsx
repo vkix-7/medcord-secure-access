@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -43,8 +42,8 @@ export default function LoginForm() {
     }
     
     try {
-      // Direct sign in without OTP
-      await signIn(formData.email, formData.password, userType, false);
+      // Direct sign in without OTP - only pass 3 arguments
+      await signIn(formData.email, formData.password, userType);
       setLoginAttempts(0); // Reset attempts on successful login
       toast.success("Login successful!");
     } catch (error: any) {
