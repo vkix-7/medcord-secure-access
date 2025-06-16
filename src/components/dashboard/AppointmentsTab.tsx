@@ -28,7 +28,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Calendar, Clock, UserPlus, X } from "lucide-react";
+import { Calendar, Clock, UserPlus, X, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 interface Appointment {
@@ -77,9 +77,31 @@ export default function AppointmentsTab() {
     reason: ""
   });
 
+  // Filter states
+  const [filters, setFilters] = useState({
+    startDate: "",
+    endDate: "",
+    timeFrom: "",
+    timeTo: ""
+  });
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewAppointment({ ...newAppointment, [name]: value });
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFilters({ ...filters, [name]: value });
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      startDate: "",
+      endDate: "",
+      timeFrom: "",
+      timeTo: ""
+    });
   };
 
   const handleCreateAppointment = () => {
@@ -122,11 +144,55 @@ export default function AppointmentsTab() {
     toast.success("Appointment cancelled");
   };
 
+  // Convert time string to 24-hour format for comparison
+  const convertTo24Hour = (timeStr: string): string => {
+    const [time, period] = timeStr.split(' ');
+    const [hours, minutes] = time.split(':');
+    let hour24 = parseInt(hours);
+    
+    if (period === 'PM' && hour24 !== 12) {
+      hour24 += 12;
+    } else if (period === 'AM' && hour24 === 12) {
+      hour24 = 0;
+    }
+    
+    return `${hour24.toString().padStart(2, '0')}:${minutes}`;
+  };
+
+  // Filter appointments based on date and time
+  const getFilteredAppointments = (appointmentsList: Appointment[]) => {
+    return appointmentsList.filter(appointment => {
+      // Date filters
+      if (filters.startDate && appointment.date < filters.startDate) {
+        return false;
+      }
+      if (filters.endDate && appointment.date > filters.endDate) {
+        return false;
+      }
+      
+      // Time filters
+      if (filters.timeFrom || filters.timeTo) {
+        const appointmentTime24 = convertTo24Hour(appointment.time);
+        
+        if (filters.timeFrom && appointmentTime24 < filters.timeFrom) {
+          return false;
+        }
+        if (filters.timeTo && appointmentTime24 > filters.timeTo) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
+
   // Format date for display
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  const filteredAppointments = getFilteredAppointments(appointments);
 
   return (
     <div className="space-y-6">
@@ -205,6 +271,68 @@ export default function AppointmentsTab() {
         </Dialog>
       </div>
 
+      {/* Filter Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-primary" />
+            <CardTitle>Filter Appointments</CardTitle>
+          </div>
+          <CardDescription>
+            Filter appointments by date range and time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-2">
+              <Label htmlFor="startDate">Start Date</Label>
+              <Input
+                id="startDate"
+                name="startDate"
+                type="date"
+                value={filters.startDate}
+                onChange={handleFilterChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="endDate">End Date</Label>
+              <Input
+                id="endDate"
+                name="endDate"
+                type="date"
+                value={filters.endDate}
+                onChange={handleFilterChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="timeFrom">Time From</Label>
+              <Input
+                id="timeFrom"
+                name="timeFrom"
+                type="time"
+                value={filters.timeFrom}
+                onChange={handleFilterChange}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="timeTo">Time To</Label>
+              <Input
+                id="timeTo"
+                name="timeTo"
+                type="time"
+                value={filters.timeTo}
+                onChange={handleFilterChange}
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <Button variant="outline" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -213,6 +341,9 @@ export default function AppointmentsTab() {
           </div>
           <CardDescription>
             Your scheduled healthcare visits
+            {(filters.startDate || filters.endDate || filters.timeFrom || filters.timeTo) && 
+              ` (${filteredAppointments.filter(app => app.status !== "cancelled").length} of ${appointments.filter(app => app.status !== "cancelled").length} shown)`
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -228,7 +359,7 @@ export default function AppointmentsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {appointments
+              {filteredAppointments
                 .filter(app => app.status !== "cancelled")
                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                 .map((appointment) => (
@@ -266,10 +397,13 @@ export default function AppointmentsTab() {
                   </TableCell>
                 </TableRow>
               ))}
-              {appointments.filter(app => app.status !== "cancelled").length === 0 && (
+              {filteredAppointments.filter(app => app.status !== "cancelled").length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                    No upcoming appointments. Schedule one now!
+                    {(filters.startDate || filters.endDate || filters.timeFrom || filters.timeTo) 
+                      ? "No appointments match your filters"
+                      : "No upcoming appointments. Schedule one now!"
+                    }
                   </TableCell>
                 </TableRow>
               )}
